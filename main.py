@@ -1,5 +1,5 @@
 import os
-import requests  # <--- NEW IMPORT
+import requests
 from datetime import datetime
 from typing import List, Optional
 from enum import IntEnum
@@ -14,9 +14,15 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fleet.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# --- APPIAN WEBHOOK CONFIGURATION (UPDATE THESE) ---
-APPIAN_WEBAPI_URL = "https://cs-fed-accelerate.appiancloud.com/suite/webapi/sync-vehicle"
-APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5NWRiYzMwNi1jN2QwLWU2NGQtZWIzOC0wYzQxY2M0MmY2MmYifQ.zE8WqYOmWBhEVZ1EKRJ-bKC0-RBmR-BMP4bPhyPg91g"
+# --- APPIAN WEBHOOK CONFIGURATION ---
+# You will need to create these additional Web APIs in Appian to sync other records!
+APPIAN_BASE_URL = "https://YOUR-SITE.appiancloud.com/suite/webapi"
+APPIAN_API_KEY = "YOUR_COPIED_API_KEY"
+
+# Specific Endpoints
+URL_SYNC_VEHICLE = f"{APPIAN_BASE_URL}/sync-vehicle"
+URL_SYNC_MAINTENANCE = f"{APPIAN_BASE_URL}/sync-maintenance"   # Create this in Appian
+URL_SYNC_PARTS = f"{APPIAN_BASE_URL}/sync-part-order"         # Create this in Appian
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -121,6 +127,23 @@ class OrderPartsRequest(BaseModel):
     purchaseCardNum: str
     totalAmount: float
 
+# --- HELPER: GENERIC WEBHOOK TRIGGER ---
+def trigger_appian_sync(url: str, record_id: int):
+    """Helper to fire-and-forget the Appian Sync Webhook"""
+    if "YOUR-SITE" in url:
+        return # Skip if not configured
+
+    try:
+        print(f"Triggering Appian Sync at {url} for ID {record_id}...")
+        requests.post(
+            url,
+            json={"id": record_id},
+            headers={"Appian-API-Key": APPIAN_API_KEY},
+            timeout=2
+        )
+    except Exception as e:
+        print(f"Failed to trigger Appian sync: {e}")
+
 # --- 5. API ENDPOINTS ---
 app = FastAPI()
 
@@ -131,18 +154,19 @@ def get_db():
     finally:
         db.close()
 
-# --- GET ENDPOINTS (With 'ids' filtering support) ---
+# --- READ ENDPOINTS (With "Targeted Get" Support) ---
 
 @app.get("/vehicles/", response_model=List[VehicleDTO])
 def get_vehicles(
     startIndex: int = 0, 
     batchSize: int = 100, 
-    ids: Optional[str] = Query(None), # Captures "1,2,3" from Appian
+    ids: Optional[str] = Query(None), # Appian passes "1,2,3" here
     db: Session = Depends(get_db)
 ):
     query = db.query(VehicleModel)
     if ids:
         try:
+            # "Targeted Get" Logic: Filter by ID list
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(VehicleModel.id.in_(id_list))
         except ValueError:
@@ -153,12 +177,13 @@ def get_vehicles(
 def get_maintenance(
     startIndex: int = 0, 
     batchSize: int = 100, 
-    ids: Optional[str] = Query(None),
+    ids: Optional[str] = Query(None), # Added for Targeted Sync
     db: Session = Depends(get_db)
 ):
     query = db.query(MaintenanceModel)
     if ids:
         try:
+            # "Targeted Get" Logic
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(MaintenanceModel.id.in_(id_list))
         except ValueError:
@@ -169,12 +194,13 @@ def get_maintenance(
 def get_part_orders(
     startIndex: int = 0, 
     batchSize: int = 100, 
-    ids: Optional[str] = Query(None),
+    ids: Optional[str] = Query(None), # Added for Targeted Sync
     db: Session = Depends(get_db)
 ):
     query = db.query(PartOrderModel)
     if ids:
         try:
+            # "Targeted Get" Logic
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(PartOrderModel.id.in_(id_list))
         except ValueError:
@@ -182,7 +208,7 @@ def get_part_orders(
     return query.offset(startIndex).limit(batchSize).all()
 
 
-# --- WRITE APIs (With Appian Webhook) ---
+# --- WRITE ENDPOINTS (With Webhook Triggers) ---
 
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
@@ -197,25 +223,8 @@ def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db))
     db.commit()
     db.refresh(new_vehicle)
     
-    # --- TRIGGER APPIAN SYNC ---
-    # We fire and forget (using try/except) so we don't break if Appian is down
-    try:
-        if "YOUR-SITE" not in APPIAN_WEBAPI_URL: # Only run if configured
-            print(f"Attempting to sync Vehicle ID {new_vehicle.id} with Appian...")
-            response = requests.post(
-                APPIAN_WEBAPI_URL,
-                json={"id": new_vehicle.id},
-                headers={"Appian-API-Key": APPIAN_API_KEY},
-                timeout=5 # Don't wait forever
-            )
-            if response.status_code == 200:
-                print("Appian Sync Triggered Successfully.")
-            else:
-                print(f"Appian Sync Failed: {response.status_code} - {response.text}")
-        else:
-            print("Skipping Appian Sync: Configuration placeholders not replaced.")
-    except Exception as e:
-        print(f"Error triggering Appian Sync: {e}")
+    # Trigger Sync
+    trigger_appian_sync(URL_SYNC_VEHICLE, new_vehicle.id)
 
     return new_vehicle
 
@@ -229,17 +238,8 @@ def retire_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(vehicle)
     
-    # Optional: Trigger Appian Sync here too if you want instant updates on Retire
-    try:
-        if "YOUR-SITE" not in APPIAN_WEBAPI_URL:
-            requests.post(
-                APPIAN_WEBAPI_URL,
-                json={"id": vehicle.id},
-                headers={"Appian-API-Key": APPIAN_API_KEY},
-                timeout=5
-            )
-    except Exception:
-        pass
+    # Trigger Sync (Vehicle changed)
+    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
 
     return vehicle
 
@@ -248,9 +248,7 @@ def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db
     vehicle = db.query(VehicleModel).filter(VehicleModel.id == req.vehicleId).first()
     if not vehicle:
         raise HTTPException(404, "Vehicle not found")
-    if not vehicle.is_active:
-        raise HTTPException(400, "Cannot service an inactive or retired vehicle.")
-
+    
     new_maint = MaintenanceModel(
         vehicle_id=req.vehicleId,
         technician=req.technician,
@@ -259,9 +257,15 @@ def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db
         created_on=datetime.utcnow()
     )
     db.add(new_maint)
-    vehicle.is_active = False # Lock Vehicle
+    vehicle.is_active = False 
     db.commit()
     db.refresh(new_maint)
+
+    # Trigger Sync (Maintenance Created)
+    trigger_appian_sync(URL_SYNC_MAINTENANCE, new_maint.id)
+    # Also Sync Vehicle (Status changed to Inactive)
+    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
+
     return new_maint
 
 @app.post("/maintenance/parts", response_model=PartOrderDTO)
@@ -283,6 +287,12 @@ def order_parts(req: OrderPartsRequest, db: Session = Depends(get_db)):
         
     db.commit()
     db.refresh(new_order)
+
+    # Trigger Sync (Part Order Created)
+    trigger_appian_sync(URL_SYNC_PARTS, new_order.id)
+    # Also Sync Maintenance (Status changed)
+    trigger_appian_sync(URL_SYNC_MAINTENANCE, maint.id)
+
     return new_order
 
 @app.put("/maintenance/{maintenance_id}/complete", response_model=MaintenanceDTO)
@@ -301,4 +311,10 @@ def complete_maintenance(maintenance_id: int, db: Session = Depends(get_db)):
         
     db.commit()
     db.refresh(maint)
+
+    # Trigger Sync (Maintenance Completed)
+    trigger_appian_sync(URL_SYNC_MAINTENANCE, maint.id)
+    # Also Sync Vehicle (Active Status & Service Date changed)
+    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
+
     return maint
