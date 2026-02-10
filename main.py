@@ -229,4 +229,37 @@ def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db
 def order_parts(req: OrderPartsRequest, db: Session = Depends(get_db)):
     maint = db.query(MaintenanceModel).filter(MaintenanceModel.id == req.maintenanceId).first()
     if not maint:
-        raise HTTPException(404, "Maintenance record
+        raise HTTPException(404, "Maintenance record not found")
+    
+    new_order = PartOrderModel(
+        maintenance_id=req.maintenanceId,
+        purchase_card_num=req.purchaseCardNum,
+        total_amount=req.totalAmount,
+        purchased_on=datetime.utcnow()
+    )
+    db.add(new_order)
+    
+    if maint.status_id != MaintenanceStatus.COMPLETED:
+        maint.status_id = MaintenanceStatus.WAITING_FOR_PARTS
+        
+    db.commit()
+    db.refresh(new_order)
+    return new_order
+
+@app.put("/maintenance/{maintenance_id}/complete", response_model=MaintenanceDTO)
+def complete_maintenance(maintenance_id: int, db: Session = Depends(get_db)):
+    maint = db.query(MaintenanceModel).filter(MaintenanceModel.id == maintenance_id).first()
+    if not maint:
+        raise HTTPException(404, "Maintenance record not found")
+    vehicle = db.query(VehicleModel).filter(VehicleModel.id == maint.vehicle_id).first()
+
+    maint.status_id = MaintenanceStatus.COMPLETED
+    maint.completed_on = datetime.utcnow()
+    
+    if vehicle:
+        vehicle.is_active = True
+        vehicle.last_service_date = datetime.utcnow()
+        
+    db.commit()
+    db.refresh(maint)
+    return maint
