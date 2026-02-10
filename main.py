@@ -1,4 +1,5 @@
 import os
+import requests  # <--- NEW IMPORT
 from datetime import datetime
 from typing import List, Optional
 from enum import IntEnum
@@ -12,6 +13,10 @@ from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fleet.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# --- APPIAN WEBHOOK CONFIGURATION (UPDATE THESE) ---
+APPIAN_WEBAPI_URL = "https://cs-fed-accelerate.appiancloud.com/suite/webapi/sync-vehicle"
+APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5NWRiYzMwNi1jN2QwLWU2NGQtZWIzOC0wYzQxY2M0MmY2MmYifQ.zE8WqYOmWBhEVZ1EKRJ-bKC0-RBmR-BMP4bPhyPg91g"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -126,7 +131,7 @@ def get_db():
     finally:
         db.close()
 
-# --- OPTION A: UPDATED GET ENDPOINTS (With 'ids' filtering) ---
+# --- GET ENDPOINTS (With 'ids' filtering support) ---
 
 @app.get("/vehicles/", response_model=List[VehicleDTO])
 def get_vehicles(
@@ -177,7 +182,7 @@ def get_part_orders(
     return query.offset(startIndex).limit(batchSize).all()
 
 
-# --- WRITE APIs (Unchanged) ---
+# --- WRITE APIs (With Appian Webhook) ---
 
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
@@ -191,6 +196,27 @@ def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db))
     db.add(new_vehicle)
     db.commit()
     db.refresh(new_vehicle)
+    
+    # --- TRIGGER APPIAN SYNC ---
+    # We fire and forget (using try/except) so we don't break if Appian is down
+    try:
+        if "YOUR-SITE" not in APPIAN_WEBAPI_URL: # Only run if configured
+            print(f"Attempting to sync Vehicle ID {new_vehicle.id} with Appian...")
+            response = requests.post(
+                APPIAN_WEBAPI_URL,
+                json={"id": new_vehicle.id},
+                headers={"Appian-API-Key": APPIAN_API_KEY},
+                timeout=5 # Don't wait forever
+            )
+            if response.status_code == 200:
+                print("Appian Sync Triggered Successfully.")
+            else:
+                print(f"Appian Sync Failed: {response.status_code} - {response.text}")
+        else:
+            print("Skipping Appian Sync: Configuration placeholders not replaced.")
+    except Exception as e:
+        print(f"Error triggering Appian Sync: {e}")
+
     return new_vehicle
 
 @app.put("/vehicles/{vehicle_id}/retire", response_model=VehicleDTO)
@@ -202,6 +228,19 @@ def retire_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     vehicle.is_active = False 
     db.commit()
     db.refresh(vehicle)
+    
+    # Optional: Trigger Appian Sync here too if you want instant updates on Retire
+    try:
+        if "YOUR-SITE" not in APPIAN_WEBAPI_URL:
+            requests.post(
+                APPIAN_WEBAPI_URL,
+                json={"id": vehicle.id},
+                headers={"Appian-API-Key": APPIAN_API_KEY},
+                timeout=5
+            )
+    except Exception:
+        pass
+
     return vehicle
 
 @app.post("/maintenance/start", response_model=MaintenanceDTO)
