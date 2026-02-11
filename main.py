@@ -1,12 +1,14 @@
 import os
+import random
+import string
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from enum import IntEnum
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base
 
 # --- 1. CONFIGURATION & DATABASE ---
@@ -15,14 +17,8 @@ if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # --- APPIAN WEBHOOK CONFIGURATION ---
-# You will need to create these additional Web APIs in Appian to sync other records!
-APPIAN_BASE_URL = "https://YOUR-SITE.appiancloud.com/suite/webapi"
-APPIAN_API_KEY = "YOUR_COPIED_API_KEY"
-
-# Specific Endpoints
-URL_SYNC_VEHICLE = f"{APPIAN_BASE_URL}/sync-vehicle"
-URL_SYNC_MAINTENANCE = f"{APPIAN_BASE_URL}/sync-maintenance"   # Create this in Appian
-URL_SYNC_PARTS = f"{APPIAN_BASE_URL}/sync-part-order"         # Create this in Appian
+APPIAN_SYNC_URL = "https://cs-fed-accelerate.appiancloud.com/suite/webapi/sync-records"
+APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzZDlkMzRjZi1jZDZhLTA2MjAtNDc0ZS00Nzc1M2FhMmI4Y2MifQ.vqMn7rNxpsd0KLDCKx8lbDTmIs_pZ5E7dISXsIsmD3s"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -43,6 +39,8 @@ class MaintenanceType(IntEnum):
 class VehicleModel(Base):
     __tablename__ = "fm_vehicles"
     id = Column(Integer, primary_key=True, index=True)
+    vin = Column(String, unique=True, index=True) 
+    color = Column(String)                        
     make = Column(String)
     model = Column(String)
     year = Column(Integer)
@@ -57,6 +55,8 @@ class MaintenanceModel(Base):
     technician = Column(String)
     maintenance_type_id = Column(Integer)
     status_id = Column(Integer, default=MaintenanceStatus.IN_PROGRESS)
+    notes_open = Column(String, nullable=True)   
+    notes_close = Column(String, nullable=True)  
     created_on = Column(DateTime, default=datetime.utcnow)
     completed_on = Column(DateTime, nullable=True)
 
@@ -79,6 +79,8 @@ Base.metadata.create_all(bind=engine)
 # --- 4. DTOs ---
 class VehicleDTO(BaseModel):
     id: int
+    vin: str    
+    color: str  
     make: str
     model: str
     year: int
@@ -95,6 +97,8 @@ class MaintenanceDTO(BaseModel):
     technician: str
     maintenanceTypeId: int = Field(..., alias="maintenance_type_id")
     statusId: int = Field(..., alias="status_id")
+    notesOpen: Optional[str] = Field(None, alias="notes_open")   
+    notesClose: Optional[str] = Field(None, alias="notes_close") 
     createdOn: datetime = Field(..., alias="created_on")
     completedOn: Optional[datetime] = Field(None, alias="completed_on")
     class Config:
@@ -112,7 +116,10 @@ class PartOrderDTO(BaseModel):
         orm_mode = True
         allow_population_by_field_name = True
 
+# --- 5. REQUEST MODELS ---
 class CreateVehicleRequest(BaseModel):
+    vin: str    
+    color: str  
     make: str
     model: str
     year: int
@@ -121,30 +128,117 @@ class StartMaintenanceRequest(BaseModel):
     vehicleId: int
     technician: str
     maintenanceTypeId: int
+    notesOpen: Optional[str] = None 
+
+class CompleteMaintenanceRequest(BaseModel):
+    notesClose: Optional[str] = None 
 
 class OrderPartsRequest(BaseModel):
     maintenanceId: int
     purchaseCardNum: str
     totalAmount: float
 
-# --- HELPER: GENERIC WEBHOOK TRIGGER ---
-def trigger_appian_sync(url: str, record_id: int):
-    """Helper to fire-and-forget the Appian Sync Webhook"""
-    if "YOUR-SITE" in url:
-        return # Skip if not configured
+# --- 6. UNIFIED SYNC DISPATCHER ---
+def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_id: int = None):
+    """
+    Sends a single payload to the Appian Dispatcher WebAPI.
+    Appian then decides which records to sync based on the ID lists.
+    """
+    payload = {}
+    
+    # Always wrap in lists as per requirement
+    if vehicle_id: 
+        payload["vehicleIds"] = [vehicle_id]
+    if maintenance_id: 
+        payload["maintenanceIds"] = [maintenance_id]
+    if part_order_id: 
+        payload["partOrderIds"] = [part_order_id]
+
+    if not payload:
+        return 
 
     try:
-        print(f"Triggering Appian Sync at {url} for ID {record_id}...")
-        requests.post(
-            url,
-            json={"id": record_id},
+        print(f"Triggering Appian Sync Dispatcher: {payload}")
+        response = requests.post(
+            APPIAN_SYNC_URL,
+            json=payload,
             headers={"Appian-API-Key": APPIAN_API_KEY},
-            timeout=2
+            timeout=3
         )
+        if response.status_code != 200:
+            print(f"Appian Sync Error {response.status_code}: {response.text}")
     except Exception as e:
-        print(f"Failed to trigger Appian sync: {e}")
+        print(f"Failed to trigger sync: {e}")
 
-# --- 5. API ENDPOINTS ---
+# --- 7. DATA SEEDING UTILITIES ---
+def generate_vin():
+    """Generates a random 17-char VIN-like string."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=17))
+
+def seed_database(db: Session):
+    """Creates 100 vehicles if the DB is empty."""
+    count = db.query(func.count(VehicleModel.id)).scalar()
+    if count > 0:
+        print(f"Database already has {count} vehicles. Skipping seed.")
+        return
+
+    print("Seeding database with 100 vehicles...")
+    
+    fleet_data = [
+        ("Ford", ["F-150", "Mustang", "Explorer", "Bronco", "Ranger"]),
+        ("Toyota", ["Camry", "Corolla", "RAV4", "Tacoma", "Tundra"]),
+        ("Chevrolet", ["Silverado", "Malibu", "Tahoe", "Equinox"]),
+        ("Honda", ["Civic", "Accord", "CR-V", "Pilot"]),
+        ("Tesla", ["Model 3", "Model Y", "Model S", "Cybertruck"]),
+        ("Rivian", ["R1T", "R1S"]),
+        ("Dodge", ["Ram 1500", "Charger", "Challenger"])
+    ]
+    
+    colors = ["White", "Black", "Silver", "Red", "Blue", "Grey", "Green", "Yellow"]
+    
+    vehicles_to_add = []
+    
+    for _ in range(100):
+        make_tuple = random.choice(fleet_data)
+        make = make_tuple[0]
+        model = random.choice(make_tuple[1])
+        year = random.randint(2015, 2025)
+        
+        # 10% chance a vehicle is currently in maintenance (inactive)
+        is_active = random.random() > 0.1 
+        
+        vehicle = VehicleModel(
+            vin=generate_vin(),
+            color=random.choice(colors),
+            make=make,
+            model=model,
+            year=year,
+            is_active=is_active,
+            is_deleted=False,
+            last_service_date=datetime.utcnow() - timedelta(days=random.randint(1, 365))
+        )
+        db.add(vehicle)
+        vehicles_to_add.append(vehicle)
+    
+    db.commit()
+    
+    # Add some active maintenance for the inactive vehicles
+    for v in vehicles_to_add:
+        if not v.is_active:
+            maint = MaintenanceModel(
+                vehicle_id=v.id,
+                technician=random.choice(["Mike S.", "Sarah J.", "Tom B.", "Alex R."]),
+                maintenance_type_id=random.choice([1, 2, 3]),
+                status_id=MaintenanceStatus.IN_PROGRESS,
+                notes_open="Routine check triggered during seeding.",
+                created_on=datetime.utcnow() - timedelta(days=random.randint(0, 5))
+            )
+            db.add(maint)
+    
+    db.commit()
+    print("Seeding complete!")
+
+# --- 8. API ENDPOINTS ---
 app = FastAPI()
 
 def get_db():
@@ -154,65 +248,58 @@ def get_db():
     finally:
         db.close()
 
-# --- READ ENDPOINTS (With "Targeted Get" Support) ---
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    seed_database(db)
+    db.close()
+
+# --- READ ENDPOINTS ---
 
 @app.get("/vehicles/", response_model=List[VehicleDTO])
 def get_vehicles(
-    startIndex: int = 0, 
-    batchSize: int = 100, 
-    ids: Optional[str] = Query(None), # Appian passes "1,2,3" here
-    db: Session = Depends(get_db)
+    startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)
 ):
     query = db.query(VehicleModel)
     if ids:
         try:
-            # "Targeted Get" Logic: Filter by ID list
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(VehicleModel.id.in_(id_list))
-        except ValueError:
-            pass 
+        except ValueError: pass 
     return query.offset(startIndex).limit(batchSize).all()
 
 @app.get("/maintenance/", response_model=List[MaintenanceDTO])
 def get_maintenance(
-    startIndex: int = 0, 
-    batchSize: int = 100, 
-    ids: Optional[str] = Query(None), # Added for Targeted Sync
-    db: Session = Depends(get_db)
+    startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)
 ):
     query = db.query(MaintenanceModel)
     if ids:
         try:
-            # "Targeted Get" Logic
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(MaintenanceModel.id.in_(id_list))
-        except ValueError:
-            pass
+        except ValueError: pass
     return query.offset(startIndex).limit(batchSize).all()
 
 @app.get("/part-orders/", response_model=List[PartOrderDTO])
 def get_part_orders(
-    startIndex: int = 0, 
-    batchSize: int = 100, 
-    ids: Optional[str] = Query(None), # Added for Targeted Sync
-    db: Session = Depends(get_db)
+    startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)
 ):
     query = db.query(PartOrderModel)
     if ids:
         try:
-            # "Targeted Get" Logic
             id_list = [int(i) for i in ids.split(",")]
             query = query.filter(PartOrderModel.id.in_(id_list))
-        except ValueError:
-            pass
+        except ValueError: pass
     return query.offset(startIndex).limit(batchSize).all()
 
 
-# --- WRITE ENDPOINTS (With Webhook Triggers) ---
+# --- WRITE ENDPOINTS ---
 
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
     new_vehicle = VehicleModel(
+        vin=vehicle.vin,
+        color=vehicle.color,
         make=vehicle.make,
         model=vehicle.model,
         year=vehicle.year,
@@ -223,37 +310,34 @@ def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db))
     db.commit()
     db.refresh(new_vehicle)
     
-    # Trigger Sync
-    trigger_appian_sync(URL_SYNC_VEHICLE, new_vehicle.id)
-
+    # Sync just the vehicle
+    trigger_sync(vehicle_id=new_vehicle.id)
     return new_vehicle
 
 @app.put("/vehicles/{vehicle_id}/retire", response_model=VehicleDTO)
 def retire_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     vehicle = db.query(VehicleModel).filter(VehicleModel.id == vehicle_id).first()
-    if not vehicle:
-        raise HTTPException(404, "Vehicle not found")
+    if not vehicle: raise HTTPException(404, "Vehicle not found")
+    
     vehicle.is_deleted = True
     vehicle.is_active = False 
     db.commit()
     db.refresh(vehicle)
     
-    # Trigger Sync (Vehicle changed)
-    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
-
+    trigger_sync(vehicle_id=vehicle.id)
     return vehicle
 
 @app.post("/maintenance/start", response_model=MaintenanceDTO)
 def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db)):
     vehicle = db.query(VehicleModel).filter(VehicleModel.id == req.vehicleId).first()
-    if not vehicle:
-        raise HTTPException(404, "Vehicle not found")
+    if not vehicle: raise HTTPException(404, "Vehicle not found")
     
     new_maint = MaintenanceModel(
         vehicle_id=req.vehicleId,
         technician=req.technician,
         maintenance_type_id=req.maintenanceTypeId,
-        status_id=MaintenanceStatus.IN_PROGRESS, 
+        status_id=MaintenanceStatus.IN_PROGRESS,
+        notes_open=req.notesOpen,
         created_on=datetime.utcnow()
     )
     db.add(new_maint)
@@ -261,18 +345,14 @@ def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_maint)
 
-    # Trigger Sync (Maintenance Created)
-    trigger_appian_sync(URL_SYNC_MAINTENANCE, new_maint.id)
-    # Also Sync Vehicle (Status changed to Inactive)
-    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
-
+    # Strategy: Send Maintenance ID. Appian Process Model will find the parent Vehicle.
+    trigger_sync(maintenance_id=new_maint.id) 
     return new_maint
 
 @app.post("/maintenance/parts", response_model=PartOrderDTO)
 def order_parts(req: OrderPartsRequest, db: Session = Depends(get_db)):
     maint = db.query(MaintenanceModel).filter(MaintenanceModel.id == req.maintenanceId).first()
-    if not maint:
-        raise HTTPException(404, "Maintenance record not found")
+    if not maint: raise HTTPException(404, "Maintenance record not found")
     
     new_order = PartOrderModel(
         maintenance_id=req.maintenanceId,
@@ -288,22 +368,20 @@ def order_parts(req: OrderPartsRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_order)
 
-    # Trigger Sync (Part Order Created)
-    trigger_appian_sync(URL_SYNC_PARTS, new_order.id)
-    # Also Sync Maintenance (Status changed)
-    trigger_appian_sync(URL_SYNC_MAINTENANCE, maint.id)
-
+    # Strategy: Send PartOrder ID. Appian Process Model will find Maintenance -> Vehicle.
+    trigger_sync(part_order_id=new_order.id)
     return new_order
 
 @app.put("/maintenance/{maintenance_id}/complete", response_model=MaintenanceDTO)
-def complete_maintenance(maintenance_id: int, db: Session = Depends(get_db)):
+def complete_maintenance(maintenance_id: int, req: CompleteMaintenanceRequest, db: Session = Depends(get_db)):
     maint = db.query(MaintenanceModel).filter(MaintenanceModel.id == maintenance_id).first()
-    if not maint:
-        raise HTTPException(404, "Maintenance record not found")
+    if not maint: raise HTTPException(404, "Maintenance record not found")
+    
     vehicle = db.query(VehicleModel).filter(VehicleModel.id == maint.vehicle_id).first()
 
     maint.status_id = MaintenanceStatus.COMPLETED
     maint.completed_on = datetime.utcnow()
+    maint.notes_close = req.notesClose
     
     if vehicle:
         vehicle.is_active = True
@@ -312,9 +390,6 @@ def complete_maintenance(maintenance_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(maint)
 
-    # Trigger Sync (Maintenance Completed)
-    trigger_appian_sync(URL_SYNC_MAINTENANCE, maint.id)
-    # Also Sync Vehicle (Active Status & Service Date changed)
-    trigger_appian_sync(URL_SYNC_VEHICLE, vehicle.id)
-
+    # Strategy: Send Maintenance ID. Appian Process Model will find parent Vehicle.
+    trigger_sync(maintenance_id=maint.id)
     return maint
