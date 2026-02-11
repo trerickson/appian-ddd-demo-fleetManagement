@@ -81,8 +81,8 @@ class PartOrderModel(Base):
 # --- DATABASE RESET PROTOCOL ---
 # WARNING: This wipes the database on every startup to ensure the schema is correct.
 # If you want to keep data between restarts later, comment out the 'drop_all' line.
-Base.metadata.drop_all(bind=engine)   # <--- THE FIX
-Base.metadata.create_all(bind=engine)
+Base.metadata.drop_all(bind=engine)   # <--- THE FIX: DELETES OLD BROKEN TABLES
+Base.metadata.create_all(bind=engine) # <--- CREATES NEW CORRECT TABLES
 
 # --- 4. DTOs ---
 class VehicleDTO(BaseModel):
