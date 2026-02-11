@@ -11,16 +11,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base
 
-# --- 1. CONFIGURATION & DATABASE ---
-# If Railway provides a DATABASE_URL, use it. Otherwise, fallback to a local file (SQLite).
+# --- 1. CONFIGURATION ---
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fleet.db")
-
-# Fix for Railway/Heroku Postgres URLs (they start with postgres:// but need postgresql://)
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# --- APPIAN WEBHOOK CONFIGURATION ---
-# This is your single "Dispatcher" WebAPI in Appian
+# APPIAN CONFIG
 APPIAN_SYNC_URL = "https://cs-fed-accelerate.appiancloud.com/suite/webapi/sync-records"
 APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzZDlkMzRjZi1jZDZhLTA2MjAtNDc0ZS00Nzc1M2FhMmI4Y2MifQ.vqMn7rNxpsd0KLDCKx8lbDTmIs_pZ5E7dISXsIsmD3s"
 
@@ -43,8 +39,8 @@ class MaintenanceType(IntEnum):
 class VehicleModel(Base):
     __tablename__ = "fm_vehicles"
     id = Column(Integer, primary_key=True, index=True)
-    vin = Column(String, unique=True, index=True) # NEW
-    color = Column(String)                        # NEW
+    vin = Column(String, unique=True, index=True) 
+    color = Column(String)                        
     make = Column(String)
     model = Column(String)
     year = Column(Integer)
@@ -59,8 +55,8 @@ class MaintenanceModel(Base):
     technician = Column(String)
     maintenance_type_id = Column(Integer)
     status_id = Column(Integer, default=MaintenanceStatus.IN_PROGRESS)
-    notes_open = Column(String, nullable=True)   # NEW
-    notes_close = Column(String, nullable=True)  # NEW
+    notes_open = Column(String, nullable=True)   
+    notes_close = Column(String, nullable=True)  
     created_on = Column(DateTime, default=datetime.utcnow)
     completed_on = Column(DateTime, nullable=True)
 
@@ -78,13 +74,72 @@ class PartOrderModel(Base):
 
     maintenance = relationship("MaintenanceModel", back_populates="part_orders")
 
-# --- DATABASE RESET PROTOCOL ---
-# WARNING: This wipes the database on every startup to ensure the schema is correct.
-# If you want to keep data between restarts later, comment out the 'drop_all' line.
-Base.metadata.drop_all(bind=engine)   # <--- THE FIX: DELETES OLD BROKEN TABLES
-Base.metadata.create_all(bind=engine) # <--- CREATES NEW CORRECT TABLES
+# --- DATABASE RESET (THE NUCLEAR OPTION) ---
+# This wipes the DB on every deploy to ensure schema matches code.
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
-# --- 4. DTOs ---
+# --- 4. DATA SEEDING (THE FULL VERSION) ---
+def generate_vin():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=17))
+
+def seed_database(db: Session):
+    print("Seeding database with 100 vehicles...")
+    
+    # This list is just a menu. The loop below runs 100 times.
+    fleet_data = [
+        ("Ford", ["F-150", "Mustang", "Explorer", "Bronco", "Ranger"]),
+        ("Toyota", ["Camry", "Corolla", "RAV4", "Tacoma", "Tundra"]),
+        ("Chevrolet", ["Silverado", "Malibu", "Tahoe", "Equinox"]),
+        ("Honda", ["Civic", "Accord", "CR-V", "Pilot"]),
+        ("Tesla", ["Model 3", "Model Y", "Model S", "Cybertruck"]),
+        ("Rivian", ["R1T", "R1S"]),
+        ("Dodge", ["Ram 1500", "Charger", "Challenger"])
+    ]
+    colors = ["White", "Black", "Silver", "Red", "Blue", "Grey", "Green", "Yellow"]
+    
+    vehicles_to_add = []
+    
+    # 1. CREATE 100 VEHICLES
+    for _ in range(100):
+        make_tuple = random.choice(fleet_data)
+        make = make_tuple[0]
+        model = random.choice(make_tuple[1])
+        year = random.randint(2015, 2025)
+        is_active = random.random() > 0.1 # 90% are active
+        
+        vehicle = VehicleModel(
+            vin=generate_vin(),
+            color=random.choice(colors),
+            make=make,
+            model=model,
+            year=year,
+            is_active=is_active,
+            is_deleted=False,
+            last_service_date=datetime.utcnow() - timedelta(days=random.randint(1, 365))
+        )
+        db.add(vehicle)
+        vehicles_to_add.append(vehicle)
+    
+    db.commit()
+    
+    # 2. CREATE MAINTENANCE HISTORY FOR INACTIVE VEHICLES
+    for v in vehicles_to_add:
+        if not v.is_active:
+            maint = MaintenanceModel(
+                vehicle_id=v.id,
+                technician=random.choice(["Mike S.", "Sarah J.", "Tom B."]),
+                maintenance_type_id=random.choice([1, 2, 3]),
+                status_id=MaintenanceStatus.IN_PROGRESS,
+                notes_open="Routine check triggered during seeding.",
+                created_on=datetime.utcnow() - timedelta(days=random.randint(0, 5))
+            )
+            db.add(maint)
+    
+    db.commit()
+    print("Seeding complete! 100 Vehicles created.")
+
+# --- 5. DTOs ---
 class VehicleDTO(BaseModel):
     id: int
     vin: str    
@@ -124,7 +179,7 @@ class PartOrderDTO(BaseModel):
         orm_mode = True
         allow_population_by_field_name = True
 
-# --- 5. REQUEST MODELS ---
+# --- 6. REQUEST MODELS ---
 class CreateVehicleRequest(BaseModel):
     vin: str    
     color: str  
@@ -146,12 +201,8 @@ class OrderPartsRequest(BaseModel):
     purchaseCardNum: str
     totalAmount: float
 
-# --- 6. UNIFIED SYNC DISPATCHER ---
+# --- 7. SYNC TRIGGER ---
 def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_id: int = None):
-    """
-    Sends a single payload to the Appian Dispatcher WebAPI.
-    Appian then decides which records to sync based on the ID lists.
-    """
     payload = {}
     if vehicle_id: payload["vehicleIds"] = [vehicle_id]
     if maintenance_id: payload["maintenanceIds"] = [maintenance_id]
@@ -170,68 +221,6 @@ def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_
     except Exception as e:
         print(f"Failed to trigger sync: {e}")
 
-# --- 7. DATA SEEDING UTILITIES ---
-def generate_vin():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=17))
-
-def seed_database(db: Session):
-    count = db.query(func.count(VehicleModel.id)).scalar()
-    if count > 0:
-        return # Already seeded
-
-    print("Seeding database with 100 vehicles...")
-    
-    fleet_data = [
-        ("Ford", ["F-150", "Mustang", "Explorer", "Bronco", "Ranger"]),
-        ("Toyota", ["Camry", "Corolla", "RAV4", "Tacoma", "Tundra"]),
-        ("Chevrolet", ["Silverado", "Malibu", "Tahoe", "Equinox"]),
-        ("Honda", ["Civic", "Accord", "CR-V", "Pilot"]),
-        ("Tesla", ["Model 3", "Model Y", "Model S", "Cybertruck"]),
-        ("Rivian", ["R1T", "R1S"]),
-        ("Dodge", ["Ram 1500", "Charger", "Challenger"])
-    ]
-    colors = ["White", "Black", "Silver", "Red", "Blue", "Grey", "Green", "Yellow"]
-    
-    vehicles_to_add = []
-    
-    for _ in range(100):
-        make_tuple = random.choice(fleet_data)
-        make = make_tuple[0]
-        model = random.choice(make_tuple[1])
-        year = random.randint(2015, 2025)
-        is_active = random.random() > 0.1 
-        
-        vehicle = VehicleModel(
-            vin=generate_vin(),
-            color=random.choice(colors),
-            make=make,
-            model=model,
-            year=year,
-            is_active=is_active,
-            is_deleted=False,
-            last_service_date=datetime.utcnow() - timedelta(days=random.randint(1, 365))
-        )
-        db.add(vehicle)
-        vehicles_to_add.append(vehicle)
-    
-    db.commit()
-    
-    # Add maintenance for inactive vehicles
-    for v in vehicles_to_add:
-        if not v.is_active:
-            maint = MaintenanceModel(
-                vehicle_id=v.id,
-                technician=random.choice(["Mike S.", "Sarah J.", "Tom B."]),
-                maintenance_type_id=random.choice([1, 2, 3]),
-                status_id=MaintenanceStatus.IN_PROGRESS,
-                notes_open="Routine check triggered during seeding.",
-                created_on=datetime.utcnow() - timedelta(days=random.randint(0, 5))
-            )
-            db.add(maint)
-    
-    db.commit()
-    print("Seeding complete!")
-
 # --- 8. API ENDPOINTS ---
 app = FastAPI()
 
@@ -244,13 +233,11 @@ def get_db():
 
 @app.on_event("startup")
 def startup_event():
-    # Run seeding on startup
     db = SessionLocal()
     seed_database(db)
     db.close()
 
-# --- READ ENDPOINTS ---
-
+# READ
 @app.get("/vehicles/", response_model=List[VehicleDTO])
 def get_vehicles(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
     query = db.query(VehicleModel)
@@ -281,8 +268,7 @@ def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str
         except ValueError: pass
     return query.offset(startIndex).limit(batchSize).all()
 
-# --- WRITE ENDPOINTS ---
-
+# WRITE
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
     new_vehicle = VehicleModel(
