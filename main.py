@@ -10,7 +10,7 @@ from enum import IntEnum
 from fastapi import FastAPI, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey, func, text
-from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base, joinedload
 
 # --- 1. CONFIGURATION & CONNECTION TEST ---
 # We keep this strict logic because we know it works now.
@@ -280,6 +280,41 @@ def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str
             query = query.filter(PartOrderModel.id.in_(id_list))
         except ValueError: pass
     return query.offset(startIndex).limit(batchSize).all()
+
+# --- NEW HIERARCHICAL SYNC ENDPOINT (FOR APPIAN DATA FABRIC) ---
+@app.get("/fleet-fabric/sync")
+def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session = Depends(get_db)):
+    # 1. Get total vehicle count for Appian's sync progress bar
+    total_count = db.query(VehicleModel).count()
+    
+    # 2. Eager load the entire tree: Vehicle -> Maintenance -> Part Orders
+    fleet_data = db.query(VehicleModel).options(
+        joinedload(VehicleModel.id).joinedload(MaintenanceModel.part_orders)
+    ).offset(startIndex).limit(batchSize).all()
+
+    # 3. Return the nested structure
+    return {
+        "data": [
+            {
+                "id": v.id,
+                "vin": v.vin,
+                "make": v.make,
+                "model": v.model,
+                "maintenance": [
+                    {
+                        "id": m.id,
+                        "technician": m.technician,
+                        "statusId": m.status_id,
+                        "part_orders": [
+                            {"id": p.id, "part": p.purchase_card_num, "cost": p.total_amount}
+                            for p in m.part_orders
+                        ]
+                    } for m in db.query(MaintenanceModel).filter(MaintenanceModel.vehicle_id == v.id).all()
+                ]
+            } for v in fleet_data
+        ],
+        "totalCount": total_count
+    }
 
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
