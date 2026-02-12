@@ -284,39 +284,47 @@ def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str
 # --- NEW HIERARCHICAL SYNC ENDPOINT (FOR APPIAN DATA FABRIC) ---
 @app.get("/fleet-fabric/sync")
 def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session = Depends(get_db)):
-    # 1. Get total vehicle count
-    total_count = db.query(VehicleModel).count()
-    
-    # 2. FIXED: Use 'maintenance_logs' to match your VehicleModel class
-    fleet_data = db.query(VehicleModel).options(
-        joinedload(VehicleModel.maintenance_logs) 
-        .joinedload(MaintenanceModel.part_orders)
-    ).offset(startIndex).limit(batchSize).all()
+    try:
+        # 1. Get total count
+        total_count = db.query(VehicleModel).count()
+        
+        # 2. Fetch vehicles using the correct relationship name from your model
+        vehicles = db.query(VehicleModel).options(
+            joinedload(VehicleModel.maintenance_logs)
+        ).offset(startIndex).limit(batchSize).all()
 
-    # 3. Return the nested structure
-    return {
-        "data": [
-            {
+        data_payload = []
+        for v in vehicles:
+            # Manually fetching maintenance to avoid lazy-loading crashes during serialization
+            m_logs = db.query(MaintenanceModel).filter(MaintenanceModel.vehicle_id == v.id).all()
+            
+            m_list = []
+            for m in m_logs:
+                # Manually fetching parts for each maintenance record
+                p_orders = db.query(PartOrderModel).filter(PartOrderModel.maintenance_id == m.id).all()
+                m_list.append({
+                    "id": m.id,
+                    "technician": m.technician,
+                    "statusId": m.status_id,
+                    "part_orders": [{"id": p.id, "cost": p.total_amount} for p in p_orders]
+                })
+
+            data_payload.append({
                 "id": v.id,
                 "vin": v.vin,
                 "make": v.make,
                 "model": v.model,
-                # FIXED: Loop through 'maintenance_logs'
-                "maintenance": [
-                    {
-                        "id": m.id,
-                        "technician": m.technician,
-                        "statusId": m.status_id,
-                        "part_orders": [
-                            {"id": p.id, "part": p.purchase_card_num, "cost": p.total_amount}
-                            for p in m.part_orders
-                        ]
-                    } for m in v.maintenance_logs 
-                ]
-            } for v in fleet_data
-        ],
-        "totalCount": total_count
-    }
+                "maintenance": m_list
+            })
+
+        return {
+            "data": data_payload,
+            "totalCount": total_count
+        }
+    except Exception as e:
+        # This will show you exactly what's failing in your Railway logs
+        print(f"CRITICAL SYNC ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
