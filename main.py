@@ -284,12 +284,13 @@ def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str
 # --- NEW HIERARCHICAL SYNC ENDPOINT (FOR APPIAN DATA FABRIC) ---
 @app.get("/fleet-fabric/sync")
 def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session = Depends(get_db)):
-    # 1. Get total vehicle count for Appian's sync progress bar
+    # 1. Get total vehicle count
     total_count = db.query(VehicleModel).count()
     
-    # 2. Eager load the entire tree: Vehicle -> Maintenance -> Part Orders
+    # 2. FIXED: Use 'maintenance_logs' to match your VehicleModel class
     fleet_data = db.query(VehicleModel).options(
-        joinedload(VehicleModel.id).joinedload(MaintenanceModel.part_orders)
+        joinedload(VehicleModel.maintenance_logs) 
+        .joinedload(MaintenanceModel.part_orders)
     ).offset(startIndex).limit(batchSize).all()
 
     # 3. Return the nested structure
@@ -300,6 +301,7 @@ def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session
                 "vin": v.vin,
                 "make": v.make,
                 "model": v.model,
+                # FIXED: Loop through 'maintenance_logs'
                 "maintenance": [
                     {
                         "id": m.id,
@@ -309,7 +311,7 @@ def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session
                             {"id": p.id, "part": p.purchase_card_num, "cost": p.total_amount}
                             for p in m.part_orders
                         ]
-                    } for m in db.query(MaintenanceModel).filter(MaintenanceModel.vehicle_id == v.id).all()
+                    } for m in v.maintenance_logs 
                 ]
             } for v in fleet_data
         ],
