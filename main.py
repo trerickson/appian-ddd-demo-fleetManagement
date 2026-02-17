@@ -208,7 +208,7 @@ def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session
         return {
             "data": [
                 {
-                    "id": v.id, "vin": v.vin, "make": v.make, "model": v.model,
+                    "id": v.id, "vin": v.vin, "make": v.make, "model": v.model, "color": v.color,
                     "maintenance": [
                         {
                             "id": m.id, "technician": m.technician, "statusId": m.status_id,
