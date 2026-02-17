@@ -287,3 +287,80 @@ def complete_maintenance(m_id: int, req: CompleteMaintenanceRequest, db: Session
     m.status_id = MaintenanceStatus.COMPLETED; m.completed_on = datetime.utcnow(); m.notes_close = req.notesClose
     if v: v.is_active = True; v.last_service_date = datetime.utcnow()
     db.commit(); db.refresh(m); trigger_sync(maintenance_id=m.id); return m
+
+# =====================================================================
+# --- 10. NON-RECORD FABRIC ENDPOINTS (STRICTLY ADDITIVE FOR DEMO 2) ---
+# =====================================================================
+
+# --- HELPER: FORMAT HIERARCHICAL VEHICLE ---
+def format_hierarchical_vehicle(v: VehicleModel):
+    """Formats a single vehicle into the exact nested JSON expected by the Appian UI."""
+    return {
+        "id": v.id, 
+        "vin": v.vin, 
+        "make": v.make, 
+        "model": v.model,
+        "maintenance": [
+            {
+                "id": m.id, 
+                "technician": m.technician, 
+                "statusId": m.status_id,
+                "part_orders": [
+                    {"id": p.id, "part": p.purchase_card_num, "cost": p.total_amount}
+                    for p in m.part_orders
+                ]
+            } for m in v.maintenance_logs
+        ]
+    }
+
+# --- ISOLATED REQUEST MODELS ---
+class FabricCreateVehicleRequest(BaseModel):
+    vin: str; color: str; make: str; model: str; year: int
+
+class FabricStartMaintenanceRequest(BaseModel):
+    technician: str; maintenanceTypeId: int; notesOpen: Optional[str] = None
+
+# --- NEW ENDPOINTS ---
+
+@app.post("/fleet-fabric/vehicles")
+def fabric_create_vehicle(req: FabricCreateVehicleRequest, db: Session = Depends(get_db)):
+    """Creates a vehicle and returns the hierarchical shape."""
+    new_v = VehicleModel(**req.dict(), is_active=True, is_deleted=False)
+    db.add(new_v)
+    db.commit()
+    db.refresh(new_v)
+    
+    # Fire sync so your Demo 1 Appian Records stay secretly updated in the background
+    trigger_sync(vehicle_id=new_v.id)
+    
+    return format_hierarchical_vehicle(new_v)
+
+@app.post("/fleet-fabric/vehicles/{vehicle_id}/maintenance")
+def fabric_add_maintenance(vehicle_id: int, req: FabricStartMaintenanceRequest, db: Session = Depends(get_db)):
+    """Adds a maintenance log and returns the updated vehicle hierarchy."""
+    # 1. Fetch vehicle with relationships
+    v = db.query(VehicleModel).options(
+        joinedload(VehicleModel.maintenance_logs).joinedload(MaintenanceModel.part_orders)
+    ).filter(VehicleModel.id == vehicle_id).first()
+    
+    if not v:
+        raise HTTPException(404, "Vehicle not found")
+        
+    # 2. Add new maintenance
+    new_m = MaintenanceModel(
+        vehicle_id=vehicle_id,
+        technician=req.technician,
+        maintenance_type_id=req.maintenanceTypeId,
+        notes_open=req.notesOpen,
+        created_on=datetime.utcnow()
+    )
+    db.add(new_m)
+    v.is_active = False # Vehicle in shop
+    db.commit()
+    
+    # 3. Refresh to get the updated relationships
+    db.refresh(v)
+    trigger_sync(maintenance_id=new_m.id, vehicle_id=v.id)
+    
+    # 4. Return the exact hierarchical shape so Appian can hot-swap the UI row
+    return format_hierarchical_vehicle(v)
