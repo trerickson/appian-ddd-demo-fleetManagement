@@ -27,8 +27,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- APPIAN WEBHOOK CONFIG ---
-APPIAN_SYNC_URL = "https://cs-fed-accelerate.appiancloud.com/suite/webapi/sync-records"
-APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzZDlkMzRjZi1jZDZhLTA2MjAtNDc0ZS00Nzc1M2FhMmI4Y2MifQ.vqMn7rNxpsd0KLDCKx8lbDTmIs_pZ5E7dISXsIsmD3s"
+APPIAN_SYNC_URL = "https://fleet-management-ddd.appian-sites.net/suite/webapi/sync-records"
+APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNTNmNDg3OC01NzBiLTNiOWMtZDgyMy1jMWVkY2M4MDBkZjEifQ.fKpUNeoOrCVxp3RF5meGJeq_fF3n3-XFXx6doq8t5iE"
 
 # --- 2. MODELS ---
 class MaintenanceStatus(IntEnum):
