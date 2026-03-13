@@ -182,7 +182,7 @@ def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_
     if part_order_id: payload["partOrderIds"] = [part_order_id]
     if not payload: return 
     try:
-        requests.post(APPIAN_SYNC_URL, json=payload, headers={"Appian-API-Key": APPIAN_API_KEY}, timeout=3)
+        requests.post(APPIAN_SYNC_URL, json=payload, headers={"Appian-API-Key": APPIAN_API_KEY}, timeout=15)
     except Exception as e:
         print(f"Sync trigger failed: {e}")
 
