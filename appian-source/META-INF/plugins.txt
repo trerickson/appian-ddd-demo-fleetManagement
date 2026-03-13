@@ -1,0 +1,8 @@
+com.appiancorp.plugins.regexfunctions
+Appian Regular Expression Functions
+2.2.36
+
+com.appiancorp.solutionsconsulting.dateAndTimeUtilities
+Date and Time Utilities
+1.3.0
+

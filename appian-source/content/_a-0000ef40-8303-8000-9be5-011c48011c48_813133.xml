@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef40-8303-8000-9be5-011c48011c48_815375</versionUuid>
+    <interface>
+        <name>TDFD_FORM_orderParts</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_813133</uuid>
+        <description>Allow tech to specify part order details</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+  #"SYSTEM_SYSRULES_formLayout_v2"(
+    titleBar: #"SYSTEM_SYSRULES_headerTemplateSimple"(
+      title: "Order Parts",
+      secondaryText: "Order Parts for Maintenance",
+      titleColor: "STANDARD",
+      secondaryTextColor: "SECONDARY",
+      stampIcon: "",
+      stampColor: "ACCENT"
+    ),
+    showTitleBarDivider: false,
+    contents: {
+      #"SYSTEM_SYSRULES_sectionLayout_v1"(
+        contents: {
+          #"SYSTEM_SYSRULES_textField"(
+            label: "Purchase Card",
+            labelPosition: "ABOVE",
+            instructions: "Last 4 Digits of Charge Card used for Purchase",
+            value: ri!purchaseCard,
+            saveInto: ri!purchaseCard,
+            refreshAfter: "UNFOCUS",
+            characterLimit: 4,
+            required: true,
+            requiredMessage: "You must specify the Purchase Card to proceed",
+            validations: {},
+            inputPurpose: "CREDIT_CARD_NUMBER"
+          ),
+          #"SYSTEM_SYSRULES_floatingPointField"(
+            label: "Total Amount",
+            labelPosition: "ABOVE",
+            value: ri!totalPurchase,
+            saveInto: ri!totalPurchase,
+            refreshAfter: "UNFOCUS",
+            required: true,
+            requiredMessage: "An amount is required to proceed",
+            validations: {}
+          )
+        }
+      )
+    },
+    buttons: #"SYSTEM_SYSRULES_ButtonLayout"(
+      primaryButtons: {
+        #"SYSTEM_SYSRULES_buttonWidget_v1"(
+          label: "Submit",
+          submit: true,
+          style: "SOLID",
+          loadingIndicator: true
+        )
+      },
+      secondaryButtons: {
+        #"SYSTEM_SYSRULES_buttonWidget_v1"(
+          label: "Cancel",
+          value: true,
+          saveInto: ri!cancel,
+          submit: true,
+          style: "OUTLINE",
+          validate: false
+        )
+      }
+    )
+  )
+)</definition>
+        <namedTypedValue>
+            <name>cancel</name>
+            <type>
+                <name>boolean</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>maintenance</name>
+            <type>
+                <name>56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d</name>
+                <namespace>urn:com:appian:recordtype:datatype</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>purchaseCard</name>
+            <type>
+                <name>string</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+            <value/>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>totalPurchase</name>
+            <type>
+                <name>double</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <typedValue>
+        <type>
+            <name>RuleTestConfig?list</name>
+            <namespace>http://www.appian.com/ae/types/2009</namespace>
+        </type>
+        <value>
+            <el>
+                <a:name/>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" xsi:type="xsd:boolean"/>
+                    <a:nameRef>cancel</a:nameRef>
+                    <a:id>1</a:id>
+                </a:ruleInputTestConfigs>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="a:Expression">#"SYSTEM_SYSRULES_queryRecordByIdentifier_v1"(
+  identifier: 2,
+  recordType: #"urn:appian:record-type:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d",
+  fields: {
+    #"urn:appian:record-relationship:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce"
+  }
+)</a:value>
+                    <a:nameRef>maintenance</a:nameRef>
+                    <a:id>2</a:id>
+                </a:ruleInputTestConfigs>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string"/>
+                    <a:nameRef>purchaseCard</a:nameRef>
+                    <a:id>3</a:id>
+                </a:ruleInputTestConfigs>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" xsi:type="xsd:double"/>
+                    <a:nameRef>totalPurchase</a:nameRef>
+                    <a:id>4</a:id>
+                </a:ruleInputTestConfigs>
+                <a:assertions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+            </el>
+        </value>
+    </typedValue>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_815375"/>
+    </history>
+</contentHaul>

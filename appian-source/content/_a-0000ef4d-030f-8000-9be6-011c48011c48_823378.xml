@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef70-14b2-8000-9bf6-011c48011c48_891279</versionUuid>
+    <interface>
+        <name>TDFD_FleetData2</name>
+        <uuid>_a-0000ef4d-030f-8000-9be6-011c48011c48_823378</uuid>
+        <description>Get Fleet Data in Real Time from the Backend - Version 2</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+  local!refreshCounter: 0,
+  local!fleetData: a!refreshVariable(
+    value: #"_a-0000ef40-8303-8000-9be5-011c48011c48_817047"(
+      startindex: 1,
+      refreshCounter: local!refreshCounter
+    ),
+    refreshOnVarChange: local!refreshCounter,
+    refreshInterval: 0.5
+  ),
+  local!selectedVehicle,
+  local!showAddForm: false,
+  local!newTechnician,
+  local!notesOpen,
+  local!newMaintenanceTypeId: 1,
+  local!orderParts: false,
+  local!purchaseCard,
+  local!totalCost,
+  local!selectedMaintenance,
+  local!completeMaintenance: false,
+  local!noteClose,
+  #"SYSTEM_SYSRULES_headerContentLayout"(
+    header: "",
+    backgroundColor: "TRANSPARENT",
+    contents: if(
+      local!showAddForm,
+      #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+        label: "Start New Maintenance for the: " &amp; local!selectedVehicle.make &amp; " " &amp; local!selectedVehicle.model,
+        decorativeBarPosition: "TOP",
+        labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        contents: {
+          #"SYSTEM_SYSRULES_columnsLayout"(
+            columns: {
+              #"SYSTEM_SYSRULES_columnLayout"(
+                contents: {
+                  #"SYSTEM_SYSRULES_textField"(
+                    label: "Technician Name",
+                    value: local!newTechnician,
+                    saveInto: local!newTechnician,
+                    required: true
+                  ),
+                  #"SYSTEM_SYSRULES_dropdownField_v1"(
+                    label: "Maintenance Type",
+                    choiceLabels: {
+                      "Standard Service",
+                      "Initial Inspection",
+                      "Repair"
+                    },
+                    choiceValues: { 1, 2, 3 },
+                    value: local!newMaintenanceTypeId,
+                    saveInto: local!newMaintenanceTypeId,
+                    required: true
+                  ),
+                  #"SYSTEM_SYSRULES_paragraphField"(
+                    height: "SHORT",
+                    label: "Technician Notes",
+                    value: local!notesOpen,
+                    saveInto: local!notesOpen,
+                    required: false,
+                    characterLimit: 500
+                  )
+                }
+              ),
+              #"SYSTEM_SYSRULES_columnLayout"(contents: {})
+            }
+          ),
+          #"SYSTEM_SYSRULES_ButtonLayout"(
+            primaryButtons: {
+              #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                label: "Submit",
+                style: "SOLID",
+                color: "ACCENT",
+                disabled: a!isNullOrEmpty(local!newTechnician),
+                saveInto: #"SYSTEM_SYSRULES_startProcess3"(
+                  processModel: #"_a-0000ef4d-030f-8000-9be6-011c48011c48_823160",
+                  processParameters: {
+                    vehicleId: local!selectedVehicle.id,
+                    technician: local!newTechnician,
+                    maintenanceTypeId: local!newMaintenanceTypeId,
+                    notesOpen: local!notesOpen
+                  },
+                  onSuccess: {
+                    a!save(
+                      local!refreshCounter,
+                      local!refreshCounter + 1
+                    ),
+                    a!save(local!showAddForm, false),
+                    a!save(local!newTechnician, null),
+                    a!save(local!notesOpen, null),
+                    a!save(local!newMaintenanceTypeId, 1)
+                  }
+                )
+              )
+            },
+            secondaryButtons: {
+              #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                label: "Cancel",
+                style: "OUTLINE",
+                saveInto: {
+                  a!save(local!showAddForm, false),
+                  a!save(local!newTechnician, null),
+                  a!save(local!notesOpen, null),
+                  a!save(local!newMaintenanceTypeId, 1)
+                }
+              )
+            }
+          )
+        }
+      ),
+      {
+        if(
+          a!isNotNullOrEmpty(local!selectedVehicle),
+          if(
+            local!orderParts,
+            #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+              label: "Order Parts for Maintenance on the: " &amp; local!selectedVehicle.make &amp; " " &amp; local!selectedVehicle.model,
+              decorativeBarPosition: "TOP",
+              labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+              decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+              contents: {
+                #"SYSTEM_SYSRULES_columnsLayout"(
+                  columns: {
+                    #"SYSTEM_SYSRULES_columnLayout"(
+                      contents: {
+                        #"SYSTEM_SYSRULES_textField"(
+                          label: "Purchase Card",
+                          value: local!purchaseCard,
+                          saveInto: local!purchaseCard,
+                          instructions: "Last 4 Digits of Charge Card used for Purchase",
+                          required: true,
+                          requiredMessage: "You must specify a card to continue."
+                        ),
+                        #"SYSTEM_SYSRULES_floatingPointField"(
+                          label: "Total Cost",
+                          value: local!totalCost,
+                          saveInto: local!totalCost,
+                          required: true,
+                          requiredMessage: "A total cost is required to continue."
+                        )
+                      }
+                    ),
+                    #"SYSTEM_SYSRULES_columnLayout"(contents: {})
+                  }
+                ),
+                #"SYSTEM_SYSRULES_ButtonLayout"(
+                  primaryButtons: {
+                    #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                      label: "Submit",
+                      style: "SOLID",
+                      color: "ACCENT",
+                      saveInto: #"SYSTEM_SYSRULES_startProcess3"(
+                        processModel: #"_a-0000ef4d-030f-8000-9be6-011c48011c48_823950",
+                        processParameters: {
+                          maintenanceId: local!selectedMaintenance.id,
+                          purchaseCard: local!purchaseCard,
+                          totalCost: local!totalCost
+                        },
+                        onSuccess: {
+                          a!save(
+                            local!refreshCounter,
+                            local!refreshCounter + 1
+                          ),
+                          a!save(local!orderParts, false),
+                          a!save(local!purchaseCard, null),
+                          a!save(local!totalCost, null),
+                          a!save(local!selectedMaintenance, null)
+                        }
+                      )
+                    )
+                  },
+                  secondaryButtons: {
+                    #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                      label: "Cancel",
+                      style: "OUTLINE",
+                      saveInto: {
+                        a!save(local!orderParts, false),
+                        a!save(local!purchaseCard, null),
+                        a!save(local!totalCost, null),
+                        a!save(local!selectedMaintenance, null)
+                      }
+                    )
+                  }
+                )
+              }
+            ),
+            if(
+              local!completeMaintenance,
+              {
+                #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+                  decorativeBarPosition: "TOP",
+                  labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                  decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                  contents: {
+                    #"SYSTEM_SYSRULES_richTextDisplayField"(
+                    value: {
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: "Maintenance Completed for the: "  &amp; local!selectedVehicle.make &amp; " " &amp; local!selectedVehicle.model,
+                      size: "MEDIUM_PLUS",
+                      style: "STRONG",
+                    )
+                    }
+                  ),
+                  #"SYSTEM_SYSRULES_paragraphField"(
+                    label: "Complete Maintenance Notes",
+                    required: true,
+                    placeholder: "Please make a note of why this maintenance can be marked complete",
+                    characterLimit: 255,
+                    showCharacterCount: true,
+                    value: local!noteClose,
+                    saveInto: local!noteClose
+                  ),
+                  #"SYSTEM_SYSRULES_ButtonLayout"(
+                    primaryButtons: {
+                      #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                        label: "Submit",
+                        style: "SOLID",
+                        color: "ACCENT",
+                        saveInto: #"SYSTEM_SYSRULES_startProcess3"(
+                          processModel: #"_a-0000ef4d-030f-8000-9be6-011c48011c48_823981",
+                          processParameters: {
+                            maintenanceId: local!selectedMaintenance.id,
+                          },
+                          onSuccess: {
+                            a!save(
+                              local!refreshCounter,
+                              local!refreshCounter + 1
+                            ),
+                            a!save(local!completeMaintenance, false),
+                            a!save(local!selectedMaintenance, null)
+                          }
+                        )
+                      )
+                    },
+                    secondaryButtons: {
+                      #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                        label: "Cancel",
+                        style: "OUTLINE",
+                        saveInto: {
+                          a!save(local!completeMaintenance, false),
+                          a!save(local!selectedMaintenance, null)
+                        }
+                      )
+                    }
+                  )
+                  }
+                ),
+              },
+              {
+                #"SYSTEM_SYSRULES_richTextDisplayField"(
+                  marginAbove: "STANDARD",
+                  value: {
+                    #"SYSTEM_SYSRULES_richTextIcon"(
+                      icon: "long-arrow-left",
+                      link: #"SYSTEM_SYSRULES_dynamicLink"(
+                        saveInto: a!save(local!selectedVehicle, null)
+                      ),
+                      linkStyle: "STANDALONE"
+                    ),
+                    #"SYSTEM_SYSRULES_richTextItem_v1"(
+                      text: " Return to Fleet Information",
+                      style: "STRONG",
+                      link: #"SYSTEM_SYSRULES_dynamicLink"(
+                        saveInto: a!save(local!selectedVehicle, null)
+                      ),
+                      linkStyle: "STANDALONE"
+                    )
+                  }
+                ),
+                #"SYSTEM_SYSRULES_cardLayout"(
+                  padding: "STANDARD",
+                  showBorder: false,
+                  contents: {
+                    #"SYSTEM_SYSRULES_richTextDisplayField"(
+                      value: #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: local!selectedVehicle.make &amp; " " &amp; local!selectedVehicle.model &amp; " Summary",
+                        style: "STRONG",
+                        size: "LARGE"
+                      )
+                    ),
+                    #"SYSTEM_SYSRULES_horizontalLine"(),
+                    #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+                      label: "Vehicle Details",
+                      labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                      decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                      decorativeBarPosition: "TOP",
+                      contents: {
+                        #"SYSTEM_SYSRULES_sectionLayout_v1"(
+                          contents: {
+                            #"SYSTEM_SYSRULES_cardLayout"(
+                              contents: #"SYSTEM_SYSRULES_columnsLayout"(
+                                columns: {
+                                  #"SYSTEM_SYSRULES_columnLayout"(
+                                    contents: {
+                                      #"SYSTEM_SYSRULES_imageField_v1"(
+                                        label: "",
+                                        labelPosition: "COLLAPSED",
+                                        images: #"SYSTEM_SYSRULES_documentImage"(
+                                          document: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813760",
+                                          altText: "Vehicle Image"
+                                        ),
+                                        size: "LARGE",
+                                        isThumbnail: false,
+                                        style: "AVATAR",
+                                        align: "START"
+                                      ),
+                                      #"SYSTEM_SYSRULES_richTextDisplayField"(
+                                        label: "VIN",
+                                        value: {
+                                          a!defaultValue(local!selectedVehicle.vin, "–")
+                                        }
+                                      ),
+
+                                    },
+                                    width: "MEDIUM_PLUS"
+                                  ),
+                                  #"SYSTEM_SYSRULES_columnLayout"(
+                                    contents: {
+                                      #"SYSTEM_SYSRULES_richTextDisplayField"(
+                                        label: "Make",
+                                        value: {
+                                          a!defaultValue(local!selectedVehicle.make, "–")
+                                        }
+                                      ),
+                                      #"SYSTEM_SYSRULES_richTextDisplayField"(
+                                        label: "Model",
+                                        value: {
+                                          a!defaultValue(local!selectedVehicle.model, "–")
+                                        }
+                                      )
+                                    }
+                                  )
+                                },
+                                alignVertical: "TOP"
+                              ),
+                              padding: "STANDARD",
+                              showBorder: false
+                            )
+                          }
+                        )
+                      }
+                    ),
+                    #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+                      label: "Maintenance Details",
+                      labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                      decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+                      decorativeBarPosition: "TOP",
+                      contents: {
+                        #"SYSTEM_SYSRULES_gridField_v4"(
+                          labelPosition: "COLLAPSED",
+                          data: index(
+                            property(local!fleetData, "maintenance", {}),
+                            wherecontains(
+                              tointeger(local!selectedVehicle.id),
+                              tointeger(property(local!fleetData, "id", {}))
+                            )[1],
+                            {}
+                          ),
+                          columns: {
+                            #"SYSTEM_SYSRULES_gridColumn"(
+                              label: "Technician",
+                              value: fv!row.technician
+                            ),
+                            #"SYSTEM_SYSRULES_gridColumn"(
+                              label: "Status",
+                              value: #"SYSTEM_SYSRULES_tagField"(
+                                tags: {
+                                  #"SYSTEM_SYSRULES_tagItem_v1"(
+                                    text: a!match(
+                                      value: fv!row.statusId,
+                                      equals: 1,
+                                      then: "In Progress",
+                                      equals: 2,
+                                      then: "Waiting for Parts",
+                                      equals: 3,
+                                      then: "Complete",
+                                      default: "Unknown"
+                                    ),
+                                    backgroundColor: a!match(
+                                      value: fv!row.statusId,
+                                      equals: 1,
+                                      then: "#92C7F0",
+                                      equals: 2,
+                                      then: "#FFF9BE",
+                                      equals: 3,
+                                      then: "#B1DFAE",
+                                      default: "STANDARD"
+                                    )
+                                  )
+                                },
+                                size: "STANDARD",
+                                align: "CENTER"
+                              )
+                            ),
+                            #"SYSTEM_SYSRULES_gridColumn"(
+                              label: "Repair Total",
+                              value: dollar(
+                                sum(property(fv!row.part_orders, "cost", 0))
+                              ),
+                              align: "END"
+                            ),
+                            #"SYSTEM_SYSRULES_gridColumn"(
+                              label: "",
+                              value: #"SYSTEM_SYSRULES_richTextDisplayField"(
+                                value: if(
+                                  fv!row.statusId = 1,
+                                  {
+                                    #"SYSTEM_SYSRULES_richTextIcon"(
+                                      icon: "cart-plus",
+                                      size: "MEDIUM",
+                                      color: "ACCENT",
+                                      caption: "Order Parts",
+                                      link: #"SYSTEM_SYSRULES_dynamicLink"(
+                                        saveInto: {
+                                          a!save(target: local!selectedMaintenance, value: fv!row),
+                                          a!save(target: local!orderParts, value: true)
+                                        }
+                                      ),
+                                      linkStyle: "STANDALONE"
+                                    )
+                                  },
+                                  if(
+                                    fv!row.statusId = 2,
+                                    #"SYSTEM_SYSRULES_richTextIcon"(
+                                      icon: "check-square-o",
+                                      size: "MEDIUM",
+                                      color: "POSITIVE",
+                                      caption: "Complete Maintenance",
+                                      linkStyle: "STANDALONE",
+                                      link: #"SYSTEM_SYSRULES_dynamicLink"(
+                                        saveInto: {
+                                          a!save(target: local!selectedMaintenance, value: fv!row),
+                                          a!save(target: local!completeMaintenance, value: true)
+                                        }
+                                      ),
+                                    ),
+                                    null
+                                  )
+                                )
+                              ),
+                              align: "CENTER",
+                              width: "ICON_PLUS"
+                            )
+                          }
+                        )
+                      },
+                      secondaryAction: {
+                        #"SYSTEM_SYSRULES_richTextDisplayField"(
+                          marginAbove: "STANDARD",
+                          value: {
+                            #"SYSTEM_SYSRULES_richTextIcon"(
+                              icon: "plus",
+                              link: #"SYSTEM_SYSRULES_dynamicLink"(
+                                saveInto: a!save(local!showAddForm, true)
+                              ),
+                              linkStyle: "STANDALONE"
+                            ),
+                            #"SYSTEM_SYSRULES_richTextItem_v1"(
+                              text: " Start Maintenance",
+                              style: "STRONG",
+                              link: #"SYSTEM_SYSRULES_dynamicLink"(
+                                saveInto: a!save(local!showAddForm, true)
+                              ),
+                              linkStyle: "STANDALONE"
+                            )
+                          },
+                          align: "RIGHT"
+                        )
+                      }
+                    )
+                  }
+                )
+              }
+            )
+          ),
+          {
+            #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+              label: "Fleet Information",
+              decorativeBarPosition: "TOP",
+              labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+              decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+              contents: {
+                #"SYSTEM_SYSRULES_ButtonLayout"(
+                  secondaryButtons: {
+                    #"SYSTEM_SYSRULES_buttonWidget_v1"(
+                      label: "Refresh Data",
+                      icon: "refresh",
+                      saveInto: a!save(
+                        local!refreshCounter,
+                        local!refreshCounter + 1
+                      ),
+                      style: "LINK"
+                    )
+                  }
+                ),
+                #"SYSTEM_SYSRULES_gridField_v4"(
+                  data: local!fleetData,
+                  pageSize: 20,
+                  columns: {
+                    #"SYSTEM_SYSRULES_gridColumn"(
+                      label: "VIN",
+                      value: #"SYSTEM_SYSRULES_richTextDisplayField"(
+                        value: #"SYSTEM_SYSRULES_richTextItem_v1"(
+                          text: fv!row.vin,
+                          link: #"SYSTEM_SYSRULES_dynamicLink"(
+                            saveInto: {
+                              a!save(local!selectedVehicle, fv!row)
+                            }
+                          ),
+                          linkStyle: "STANDALONE"
+                        )
+                      )
+                    ),
+                    #"SYSTEM_SYSRULES_gridColumn"(
+                      label: "Make",
+                      value: fv!row.make,
+                      width: "MEDIUM"
+                    ),
+                    #"SYSTEM_SYSRULES_gridColumn"(
+                      label: "Model",
+                      value: fv!row.model,
+                      width: "MEDIUM"
+                    ),
+                    #"SYSTEM_SYSRULES_gridColumn"(
+                      label: "Color",
+                      value: fv!row.color,
+                      width: "MEDIUM"
+                    ),
+                    #"SYSTEM_SYSRULES_gridColumn"(
+                      label: "Total Maintenances",
+                      value: if(
+                        a!isNotNullOrEmpty(fv!row.maintenance),
+                        count(fv!row.maintenance.id),
+                        0
+                      ),
+                      align: "CENTER"
+                    )
+                  }
+                )
+              }
+            )
+          }
+        )
+      }
+    )
+  )
+)</definition>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef4d-030f-8000-9be6-011c48011c48_825324"/>
+        <historyInfo versionUuid="_a-0000ef70-14b2-8000-9bf6-011c48011c48_891279"/>
+    </history>
+</contentHaul>

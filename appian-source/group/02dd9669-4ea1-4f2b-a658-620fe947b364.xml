@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<groupHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</versionUuid>
+    <group>
+        <name>TDFD Administrators</name>
+        <securityMap>SECURITYMAP_TEAM</securityMap>
+        <uuid>02dd9669-4ea1-4f2b-a658-620fe947b364</uuid>
+        <groupTypeUuid>SYSTEM_GROUP_TYPE_CUSTOM</groupTypeUuid>
+        <description>Assigns Administrator permissions to users for objects in the application</description>
+        <delegatedCreation>false</delegatedCreation>
+        <memberPolicy>MEMBERPOLICY_CLOSED</memberPolicy>
+        <viewingPolicy>VIEWINGPOLICY_LOW</viewingPolicy>
+        <attributes/>
+    </group>
+    <members>
+        <users/>
+        <groups/>
+    </members>
+    <admins>
+        <users/>
+        <groups>
+            <groupUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</groupUuid>
+        </groups>
+    </admins>
+    <ruleSet/>
+    <history>
+        <historyInfo versionUuid="02dd9669-4ea1-4f2b-a658-620fe947b364"/>
+    </history>
+</groupHaul>

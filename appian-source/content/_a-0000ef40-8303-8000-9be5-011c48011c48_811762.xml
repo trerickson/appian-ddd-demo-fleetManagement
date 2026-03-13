@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef6f-de90-8000-9bf3-011c48011c48_885124</versionUuid>
+    <interface>
+        <name>TDFD_RG_Vehicles</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_811762</uuid>
+        <description>A Read Only Record Grid of Vehicles </description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>  #"SYSTEM_SYSRULES_headerContentLayout"(
+    header: null,
+    contents: {
+      #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+        contents:{  #"SYSTEM_SYSRULES_gridField_v4"(
+          label: "",
+          labelPosition: "ABOVE",
+          data: #"SYSTEM_SYSRULES_recordData"(
+            recordType: #"urn:appian:record-type:v1:4319b3e4-ca07-43be-8557-19466417914e",
+            filters: #"SYSTEM_SYSRULES_queryLogicalExpression"(
+              operator: "AND",
+              filters: {
+                #"SYSTEM_SYSRULES_queryFilter"(
+                  field: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/02667f52-cc9f-4554-8ee6-b515d1c66b36",
+                  operator: "=",
+                  value: false
+                )
+              },
+              ignoreFiltersWithEmptyValues: true
+            )
+          ),
+          columns: {
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "VIN",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/bec64af5-85ec-4a1f-9b76-342475d01a5f",
+              value: #"SYSTEM_SYSRULES_linkField"(
+                links: {
+                  #"SYSTEM_SYSRULES_recordLink"(
+                    label: a!defaultValue(
+                      fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/bec64af5-85ec-4a1f-9b76-342475d01a5f"],
+                      "VIN Unavailable"
+                    ),
+                    recordType: #"urn:appian:record-type:v1:4319b3e4-ca07-43be-8557-19466417914e",
+                    identifier: fv!identifier
+                  )
+                }
+              )
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Year",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/631cfde1-92e4-4591-8983-a04047641399",
+              value: a!defaultValue(
+                fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/631cfde1-92e4-4591-8983-a04047641399"],
+                "–"
+              ),
+              align: "START"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Make",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/78897d20-5972-4a74-a3a9-eab648787758",
+              value: a!defaultValue(
+                fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/78897d20-5972-4a74-a3a9-eab648787758"],
+                "–"
+              )
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Model",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/9a7bf720-51c2-4ea5-9a1c-707c3c3c6778",
+              value: a!defaultValue(
+                fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/9a7bf720-51c2-4ea5-9a1c-707c3c3c6778"],
+                "–"
+              )
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Color",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/a21ed1e0-2a0e-4992-acfd-db67a1158890",
+              value: #"SYSTEM_SYSRULES_richTextDisplayField"(
+                value: {
+                  /*a!richTextItem(*/
+                  /*text: a!defaultValue(fv!row['recordType!{4319b3e4-ca07-43be-8557-19466417914e}TDFD Vehicle.fields.{a21ed1e0-2a0e-4992-acfd-db67a1158890}color'], "Unavailable") &amp; " ",*/
+                  /*),*/
+                  #"SYSTEM_SYSRULES_richTextIcon"(
+                    icon: "circle-large",
+                    color: a!match(
+                      value: fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/a21ed1e0-2a0e-4992-acfd-db67a1158890"],
+                      equals: "Black",
+                      then: "#000000",
+                      equals: "Blue",
+                      then: "#0747AD",
+                      equals: "Brown",
+                      then: "#8B4513",
+                      equals: "Yellow",
+                      then: "#D4AF37",
+                      equals: "Grey",
+                      then: "#808080",
+                      equals: "Green",
+                      then: "#185922",
+                      equals: "Red",
+                      then: "#D32F2F",
+                      equals: "Silver",
+                      then: "#C0C0C0",
+                      equals: "White",
+                      then: "#F9F9F9",
+                      default: "#BCBCBC"
+                    ),
+                    size: "MEDIUM"
+                  )
+                }
+              ),
+              align: "CENTER",
+              width: "NARROW"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Ready",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/067a73aa-a309-412b-85d6-e97c5aca75f5",
+              value: if(
+                isnull(
+                  fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/067a73aa-a309-412b-85d6-e97c5aca75f5"]
+                ),
+                "–",
+                #"SYSTEM_SYSRULES_richTextDisplayField"(
+                  value: if(
+                    fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/067a73aa-a309-412b-85d6-e97c5aca75f5"],
+                    #"SYSTEM_SYSRULES_richTextIcon"(
+                      icon: "check-circle",
+                      altText: "Yes",
+                      color: "#138901"
+                    ),
+                    #"SYSTEM_SYSRULES_richTextIcon"(
+                      icon: "times-circle",
+                      altText: "No",
+                      color: "SECONDARY"
+                    )
+                  )
+                )
+              ),
+              align: "CENTER"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Last Service Date",
+              sortField: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/88c838c2-d5bd-4b4d-a39c-39023d65d1b2",
+              value: if(
+                isnull(
+                  fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/88c838c2-d5bd-4b4d-a39c-39023d65d1b2"]
+                ),
+                "–",
+                datetext(
+                  fv!row[#"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/88c838c2-d5bd-4b4d-a39c-39023d65d1b2"],
+                  "default"
+                )
+              ),
+              align: "END",
+              width: "NARROW_PLUS"
+            ),
+          },
+          pageSize: 20,
+          initialSorts: {
+            #"SYSTEM_SYSRULES_sortInfo"(
+              field: #"urn:appian:record-field:v1:4319b3e4-ca07-43be-8557-19466417914e/ef238eda-2915-4c6c-9867-a9bf8cd0e592",
+              ascending: true
+            )
+          },
+          validations: {},
+          refreshAfter: "RECORD_ACTION",
+          userFilters: {
+            #"urn:appian:user-filter:v1:4319b3e4-ca07-43be-8557-19466417914e/ec6affe3-1e93-4f3f-9dae-ce6939a3ea35"
+          },
+          showSearchBox: true,
+          showRefreshButton: true,
+          recordActions: {
+            #"SYSTEM_SYSRULES_recordActionItem"(
+              action: #"urn:appian:record-action:v1:4319b3e4-ca07-43be-8557-19466417914e/e88c4ce1-a9ff-4869-9ff0-faf902c947f8"
+            )
+          },
+          similarityScoreThreshold: 1.0
+        )},
+        label: "Vehicle Fleet",
+        showBorder: true,
+        labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        decorativeBarColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        decorativeBarPosition: "TOP",
+        showShadow: true,
+        /*secondaryAction: a!recordActionField(*/
+          /*actions: {*/
+            /*a!recordActionItem(*/
+              /*action: 'recordType!{4319b3e4-ca07-43be-8557-19466417914e}TDFD Vehicle.actions.{e88c4ce1-a9ff-4869-9ff0-faf902c947f8}newVehicle'*/
+            /*)*/
+          /*},*/
+          /*style: "SIDEBAR",*/
+          /*align: "END"*/
+        /*)*/
+      )
+    },
+    backgroundColor: "TRANSPARENT"
+  )</definition>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_815816"/>
+        <historyInfo versionUuid="_a-0000ef6f-de90-8000-9bf3-011c48011c48_885124"/>
+    </history>
+</contentHaul>

@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recordTypeHaul xmlns:a="http://www.appian.com/ae/types/2009" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <versionUuid>326de8df-09db-492c-ab5a-09c728dae3a7</versionUuid>
+  <recordType a:uuid="b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2" name="TDFD Part Order">
+    <a:pluralName>Part Orders</a:pluralName>
+    <a:description>Serviced Backed Record for Part Orders required for Vehicle Maintenance</a:description>
+    <a:urlStub>GqBByg</a:urlStub>
+    <a:source xsi:type="a:RecordsReplica"/>
+    <a:listViewTemplateExpr>#"SYSTEM_SYSRULES_recordGridField"(
+  columns: {
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Part Order Id",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/72dd932a-c2b0-43a2-9e98-2caa3543dd3e",
+      value: #"SYSTEM_SYSRULES_richTextDisplayField"(
+        value: {
+          #"SYSTEM_SYSRULES_richTextItem_v1"(
+            text: if(
+              fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/72dd932a-c2b0-43a2-9e98-2caa3543dd3e"] &lt; 100000,
+              text(
+                fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/72dd932a-c2b0-43a2-9e98-2caa3543dd3e"],
+                "#00000"
+              ),
+              fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/72dd932a-c2b0-43a2-9e98-2caa3543dd3e"]
+            ),
+            link: #"SYSTEM_SYSRULES_recordLink"(
+              recordType: #"urn:appian:record-type:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2",
+              identifier: fv!identifier
+            ),
+            linkStyle: "STANDALONE"
+          )
+        }
+      )
+    ),
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Maintenance Id",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/10e208ec-4e35-40c1-9742-0ed3fc3194fe",
+      value: a!defaultValue(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/10e208ec-4e35-40c1-9742-0ed3fc3194fe"], "–"),
+      align: "END"
+    ),
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Purchase Card Num",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/7d388cda-5ee3-4597-988a-019995b4e2d8",
+      value: a!defaultValue(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/7d388cda-5ee3-4597-988a-019995b4e2d8"], "–")
+    ),
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Total Amount",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/a4ad03e7-e779-48ee-a5af-aa168ccdf644",
+      value: if(
+        isnull(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/a4ad03e7-e779-48ee-a5af-aa168ccdf644"]),
+        "–",
+        fixed(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/a4ad03e7-e779-48ee-a5af-aa168ccdf644"], 2)
+      ),
+      align: "END"
+    ),
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Purchased On",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/c59f57ba-4719-4864-8f2d-7f6fba4a8f82",
+      value: if(
+        isnull(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/c59f57ba-4719-4864-8f2d-7f6fba4a8f82"]),
+        "–",
+        datetext(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/c59f57ba-4719-4864-8f2d-7f6fba4a8f82"], "default")
+      ),
+      align: "END",
+      width: "NARROW_PLUS"
+    ),
+    #"SYSTEM_SYSRULES_gridColumn"(
+      label: "Installed On",
+      sortField: #"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/6055720f-e555-427f-aec0-6984b8cea1fa",
+      value: if(
+        isnull(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/6055720f-e555-427f-aec0-6984b8cea1fa"]),
+        "–",
+        datetext(fv!row[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/6055720f-e555-427f-aec0-6984b8cea1fa"], "default")
+      ),
+      align: "END",
+      width: "NARROW_PLUS"
+    )
+  },
+  pageSize: 50,
+  borderStyle: "LIGHT",
+  shadeAlternateRows: false
+)</a:listViewTemplateExpr>
+    <a:fieldCfg a:uuid="fcbcca2c-aba7-427f-81bb-87d3b563c071" name="TDFD Maintenance">
+      <a:description/>
+      <a:sourceRef>d102d6e1-7b37-4750-9534-7caf9b343b2e/8648540b-75cd-4eee-8921-fd47c117b500</a:sourceRef>
+      <a:isSortable>false</a:isSortable>
+      <a:isSearchable>false</a:isSearchable>
+      <a:isFacet>true</a:isFacet>
+      <a:facetType>CUSTOM_BUCKETS_CLOSED</a:facetType>
+      <a:isExclusiveFacet>true</a:isExclusiveFacet>
+      <a:facetLabelExpr>"Maintenance"</a:facetLabelExpr>
+      <a:sortOrderIndex>0</a:sortOrderIndex>
+      <a:facetOrderIndex>0</a:facetOrderIndex>
+      <a:visibilityExpr/>
+      <a:defaultOptionExpr/>
+      <a:allowMultipleSelections>true</a:allowMultipleSelections>
+      <a:relatedRecordFieldUuid>d102d6e1-7b37-4750-9534-7caf9b343b2e/8648540b-75cd-4eee-8921-fd47c117b500</a:relatedRecordFieldUuid>
+      <a:relatedRecordUserFilterSort>ASCENDING</a:relatedRecordUserFilterSort>
+    </a:fieldCfg>
+    <a:detailViewCfg>
+      <a:nameExpr>#"SYSTEM_SYSRULES_rtd_getDefaultSummaryViewName"()</a:nameExpr>
+      <a:uiExpr/>
+      <a:visibilityExpr>=true()</a:visibilityExpr>
+      <a:urlStub>summary</a:urlStub>
+      <a:headerExpr/>
+      <a:recordActionLaunchType>DIALOG</a:recordActionLaunchType>
+      <a:recordUiSecurityType>EXPRESSION</a:recordUiSecurityType>
+    </a:detailViewCfg>
+    <a:isSystem>false</a:isSystem>
+    <a:dataSrcExpr/>
+    <a:facetsListExpr/>
+    <a:titleExpr>rv!record[#"urn:appian:record-field:v1:b565bcfe-6418-4fd8-b862-3d6b1d6c1fa2/7d388cda-5ee3-4597-988a-019995b4e2d8"]</a:titleExpr>
+    <a:defaultFiltersExpr/>
+    <a:layoutType>GRID</a:layoutType>
+    <a:security>16383</a:security>
+    <a:hideLatestNews>false</a:hideLatestNews>
+    <a:hideNewsView>false</a:hideNewsView>
+    <a:hideRelatedActionsView>false</a:hideRelatedActionsView>
+    <a:isExportable>true</a:isExportable>
+    <a:listViewSrcExpr/>
+    <a:recordViewSrcExpr/>
+    <a:recordRelationshipCfg>
+      <uuid>d102d6e1-7b37-4750-9534-7caf9b343b2e</uuid>
+      <relationshipName>maintenance</relationshipName>
+      <targetRecordTypeUuid>56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d</targetRecordTypeUuid>
+      <relationshipType>MANY_TO_ONE</relationshipType>
+      <relationshipData>{"sourceRecordTypeFieldUuid":"10e208ec-4e35-40c1-9742-0ed3fc3194fe","targetRecordTypeFieldUuid":"d8e08124-17bb-4612-81b3-57503af99a15","relationshipOperator":"1","joinTableSourceField":"","joinTableTargetField":""}</relationshipData>
+      <updateBehavior>NON_CASCADING</updateBehavior>
+    </a:recordRelationshipCfg>
+    <a:recordTypeSearchCfg>
+      <searchFieldsSrc>DEFAULT</searchFieldsSrc>
+      <placeholderSrc>DEFAULT</placeholderSrc>
+      <placeholder/>
+    </a:recordTypeSearchCfg>
+    <a:iconId/>
+    <a:listAutoRefreshInterval>0.0</a:listAutoRefreshInterval>
+    <a:sourceConfiguration>
+      <sourceUuid>urn:appian:record:source:expression:_a-0000ef40-8303-8000-9be5-011c48011c48_811816:_a-0000ef40-8303-8000-9be5-011c48011c48_813091</sourceUuid>
+      <sourceType>EXPRESSION</sourceType>
+      <sourceSubType>NONE</sourceSubType>
+      <sourceContextExpr/>
+      <friendlyName>TDFD_GetOrder_recordDataSource</friendlyName>
+      <sourceFilterExpr/>
+      <field>
+        <uuid>72dd932a-c2b0-43a2-9e98-2caa3543dd3e</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Integer</type>
+        <sourceFieldName>id</sourceFieldName>
+        <sourceFieldType>Number (Integer)</sourceFieldType>
+        <fieldName>partOrderId</fieldName>
+        <displayName>Id</displayName>
+        <isRecordId>true</isRecordId>
+        <isUnique>true</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <field>
+        <uuid>10e208ec-4e35-40c1-9742-0ed3fc3194fe</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Integer</type>
+        <sourceFieldName>maintenance_id</sourceFieldName>
+        <sourceFieldType>Number (Integer)</sourceFieldType>
+        <fieldName>maintenanceId</fieldName>
+        <displayName>Maintenance Id</displayName>
+        <isRecordId>false</isRecordId>
+        <isUnique>false</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <field>
+        <uuid>7d388cda-5ee3-4597-988a-019995b4e2d8</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Text</type>
+        <sourceFieldName>purchase_card_num</sourceFieldName>
+        <sourceFieldType>Text</sourceFieldType>
+        <fieldName>purchaseCardNum</fieldName>
+        <displayName>Purchase Card Num</displayName>
+        <isRecordId>false</isRecordId>
+        <isUnique>false</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <field>
+        <uuid>a4ad03e7-e779-48ee-a5af-aa168ccdf644</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Decimal</type>
+        <sourceFieldName>total_amount</sourceFieldName>
+        <sourceFieldType>Number (Decimal)</sourceFieldType>
+        <fieldName>totalAmount</fieldName>
+        <displayName>Total Amount</displayName>
+        <isRecordId>false</isRecordId>
+        <isUnique>false</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <field>
+        <uuid>c59f57ba-4719-4864-8f2d-7f6fba4a8f82</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Datetime</type>
+        <sourceFieldName>purchased_on</sourceFieldName>
+        <sourceFieldType>Date and Time</sourceFieldType>
+        <fieldName>purchasedOn</fieldName>
+        <displayName>Purchased On</displayName>
+        <isRecordId>false</isRecordId>
+        <isUnique>false</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <field>
+        <uuid>6055720f-e555-427f-aec0-6984b8cea1fa</uuid>
+        <type>{http://www.appian.com/ae/types/2009}Datetime</type>
+        <sourceFieldName>installed_on</sourceFieldName>
+        <sourceFieldType>Null</sourceFieldType>
+        <fieldName>installedOn</fieldName>
+        <displayName>Installed On</displayName>
+        <isRecordId>false</isRecordId>
+        <isUnique>false</isUnique>
+        <isCustomField>false</isCustomField>
+        <customFieldExpr/>
+        <customFieldDefaultValueStr>null</customFieldDefaultValueStr>
+        <fieldCalculationType>NA</fieldCalculationType>
+        <fieldTemplateType>NA</fieldTemplateType>
+        <recordFieldSecurityMembershipFilter/>
+        <fieldFormat/>
+        <isIndexable>false</isIndexable>
+        <subType>NA</subType>
+      </field>
+      <uuid>8180b19a-1de0-4900-977f-7b58fa05dd77</uuid>
+      <refreshSchedule>
+        <frequency>DAILY</frequency>
+        <value>{"hour":3,"minute":"00","amPM":"AM","timeZone":"America/New_York"}</value>
+        <activated>true</activated>
+      </refreshSchedule>
+      <skipFailureEnabled>true</skipFailureEnabled>
+      <recordIdGeneratorUuid/>
+    </a:sourceConfiguration>
+    <a:enabledFeatures>1023</a:enabledFeatures>
+    <a:isVisibleInRecordTypeList>false</a:isVisibleInRecordTypeList>
+    <a:recordActionLaunchType>DIALOG</a:recordActionLaunchType>
+    <a:showSearchBox>true</a:showSearchBox>
+    <a:isVisibleInDataFabric>false</a:isVisibleInDataFabric>
+    <a:usesRollingSyncLimit>false</a:usesRollingSyncLimit>
+    <a:usesRecoverySync>false</a:usesRecoverySync>
+    <a:isScheduledIndexingEnabled>false</a:isScheduledIndexingEnabled>
+  </recordType>
+  <roleMap>
+    <role name="record_type_administrator">
+      <users/>
+      <groups>
+        <groupUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</groupUuid>
+      </groups>
+    </role>
+    <role name="record_type_viewer">
+      <users/>
+      <groups>
+        <groupUuid>a7f4131c-331e-47f6-a6d1-32475682294c</groupUuid>
+      </groups>
+    </role>
+  </roleMap>
+  <history>
+    <historyInfo versionUuid="326de8df-09db-492c-ab5a-09c728dae3a7"/>
+  </history>
+  <migrationVersion>1</migrationVersion>
+</recordTypeHaul>

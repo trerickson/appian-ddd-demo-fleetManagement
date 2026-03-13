@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef70-14b2-8000-9bf6-011c48011c48_891312</versionUuid>
+    <interface>
+        <name>TDFD_RG_Maintenance</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_813012</uuid>
+        <description>Read Only Grid of Maintenance Details </description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+  local!maintenanceData: a!refreshVariable(
+    value: #"SYSTEM_SYSRULES_queryRecordType_v3"(
+      recordType: #"urn:appian:record-type:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d",
+      fields: {
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15",
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/831bd4cc-eef4-417b-a3ed-93e485397912",
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/5537b3e2-720b-4976-a132-8bfd699792f2",
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e6041e09-867d-46c1-b3ec-ce31776ef0d0",
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e287027a-96dc-4783-af42-d74ba5c3af35",
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/24db7e49-d0d7-4dff-a8f3-06445dfb193c"
+      },
+      filters: #"SYSTEM_SYSRULES_queryLogicalExpression"(
+        operator: "AND",
+        filters: {}
+      ),
+      pagingInfo: #"SYSTEM_SYSRULES_pagingInfo"(
+        startIndex: 1,
+        batchSize: 5000
+      )
+    ),
+    refreshAfter: "RECORD_ACTION"
+  ),
+  local!activeMaintenances: a!refreshVariable(
+    value: length(#"_a-0000ef70-14b2-8000-9bf6-011c48011c48_891280"(
+      recordData: local!maintenanceData.data,
+      field: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/5537b3e2-720b-4976-a132-8bfd699792f2",
+      operator: "&lt;&gt;",
+      value: 3
+    )),
+    refreshOnVarChange: {local!maintenanceData}
+  ),
+  local!percentageRepairs: a!refreshVariable(
+    value: length(#"_a-0000ef70-14b2-8000-9bf6-011c48011c48_891280"(
+      recordData: local!maintenanceData.data,
+      field: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e6041e09-867d-46c1-b3ec-ce31776ef0d0",
+      operator: "=",
+      value: 3
+    )) / length(
+      #"_a-0000ef70-14b2-8000-9bf6-011c48011c48_891280"(
+        recordData: local!maintenanceData.data,
+        field: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e6041e09-867d-46c1-b3ec-ce31776ef0d0",
+        operator: "&lt;&gt;",
+        value: 3
+      )
+    ),
+    refreshOnVarChange: {local!maintenanceData}
+  ),
+  local!partSpend: a!refreshVariable(
+      value: sum(index(
+        #"SYSTEM_SYSRULES_queryRecordType_v3"(
+          recordType: #"urn:appian:record-type:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d",
+          fields: {
+            #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15",
+            #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/174b0d51-e43d-4a4f-9565-e4390c1faaed/a4ad03e7-e779-48ee-a5af-aa168ccdf644",
+            #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/174b0d51-e43d-4a4f-9565-e4390c1faaed/c59f57ba-4719-4864-8f2d-7f6fba4a8f82"
+          },
+          filters: #"SYSTEM_SYSRULES_queryLogicalExpression"(
+            operator: "AND",
+            filters: {
+              #"SYSTEM_SYSRULES_queryFilter"(
+                field: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/174b0d51-e43d-4a4f-9565-e4390c1faaed/c59f57ba-4719-4864-8f2d-7f6fba4a8f82",
+                operator: "&gt;=",
+                value: subtractdays(now(), 30)
+              )
+            }
+          ),
+          pagingInfo: #"SYSTEM_SYSRULES_pagingInfo"(
+            startIndex: 1,
+            batchSize: 5000
+          )
+        ).data,
+        #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/174b0d51-e43d-4a4f-9565-e4390c1faaed/a4ad03e7-e779-48ee-a5af-aa168ccdf644",
+        {}
+      ))
+    ,
+    refreshAfter: "RECORD_ACTION"
+  ),
+  #"SYSTEM_SYSRULES_headerContentLayout"(
+    header: null,
+    contents: {
+      #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+        contents: {
+          #"SYSTEM_SYSRULES_columnsLayout"(
+            columns: {
+              #"SYSTEM_SYSRULES_columnLayout"(
+                contents: {
+                  #"SYSTEM_SYSRULES_richTextDisplayField"(
+                    labelPosition: "COLLAPSED",
+                    value: {
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(text: "Active Maintenances", style: "STRONG"),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: local!activeMaintenances,
+                        color: a!match(
+                          value: local!activeMaintenances,
+                          whenTrue: fv!value &lt; 10,
+                          then: "POSITIVE",
+                          whenTrue: fv!value &gt;= 10,
+                          then: "NEGATIVE",
+                          default: "ACCENT"
+                        ),
+                        size: "LARGE_PLUS"
+                      ),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextIcon"(
+                        icon: "bullseye",
+                        caption: "Target Baseline",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      ),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: " &lt;= 10",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      )
+                    },
+                    align: "CENTER"
+                  )
+                }
+              ),
+              #"SYSTEM_SYSRULES_columnLayout"(
+                contents: {
+                  #"SYSTEM_SYSRULES_richTextDisplayField"(
+                    labelPosition: "COLLAPSED",
+                    value: {
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: "Percentage of Repairs",
+                        style: "STRONG"
+                      ),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: round((local!percentageRepairs * 100),0) &amp; "%",
+                        color: if(
+                          a!isNullOrEmpty(10),
+                          "STANDARD",
+                          a!match(
+                            value: local!percentageRepairs,
+                            whenTrue: fv!value &lt; .2,
+                            then: "POSITIVE",
+                            whenTrue: fv!value &gt;= .2,
+                            then: "NEGATIVE",
+                            default: "ACCENT"
+                          )
+                        ),
+                        size: "LARGE_PLUS"
+                      ),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextIcon"(
+                        icon: "bullseye",
+                        caption: "Target Baseline",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      ),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: " &lt;= 20%",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      )
+                    },
+                    align: "CENTER"
+                  )
+                }
+              ),
+              #"SYSTEM_SYSRULES_columnLayout"(
+                contents: {
+                  #"SYSTEM_SYSRULES_richTextDisplayField"(
+                    labelPosition: "COLLAPSED",
+                    value: {
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: "Monthly Spend on Parts",
+                        style: "STRONG"
+                      ),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: text(local!partSpend, "$0,000.00"),
+                        color: a!match(
+                          value: local!partSpend,
+                          whenTrue: fv!value &lt;= 1000,
+                          then: "POSITIVE",
+                          whenTrue: fv!value &lt;= 2000,
+                          then: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813873",
+                          default: "NEGATIVE"
+                        ),
+                        size: "LARGE_PLUS"
+                      ),
+                      char(10),
+                      #"SYSTEM_SYSRULES_richTextIcon"(
+                        icon: "bullseye",
+                        caption: "Target Baseline",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      ),
+                      #"SYSTEM_SYSRULES_richTextItem_v1"(
+                        text: " &lt;= $3,000.00",
+                        color: "#7D7F7C",
+                        size: "SMALL"
+                      )
+                    },
+                    align: "CENTER"
+                  )
+                }
+              )
+            },
+            alignVertical: "MIDDLE",
+            spacing: "STANDARD",
+            showDividers: true
+          )
+        },
+        label: "Key Metrics",
+        height: "SHORT",
+        showBorder: true,
+        labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        showShadow: true
+
+      ),
+      #"_a-0000ef6f-de90-8000-9bf3-011c48011c48_885074"(
+        contents: {#"SYSTEM_SYSRULES_gridField_v4"(
+          label: "Maintenance Records",
+          labelPosition: "COLLAPSED",
+          data: #"urn:appian:record-type:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d",
+          initialSorts: {
+            #"SYSTEM_SYSRULES_sortInfo"(
+              field: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15",
+              ascending: false
+            )
+          },
+          columns: {
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Vehicle VIN",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/bec64af5-85ec-4a1f-9b76-342475d01a5f",
+              value: #"SYSTEM_SYSRULES_linkField"(
+                links: {
+                  #"SYSTEM_SYSRULES_recordLink"(
+                    label: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/bec64af5-85ec-4a1f-9b76-342475d01a5f"],
+                    recordType: #"urn:appian:record-type:v1:4319b3e4-ca07-43be-8557-19466417914e",
+                    identifier: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/831bd4cc-eef4-417b-a3ed-93e485397912"]
+                  )
+                }
+              ),
+              align: "START"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Status",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/239ece88-82eb-4543-8f5e-9563737bd85e/6778c41a-cfff-42f5-ab1c-cfc781a7a2ef",
+              value: #"SYSTEM_SYSRULES_tagField"(
+                tags: {
+                  #"SYSTEM_SYSRULES_tagItem_v1"(
+                    text: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/239ece88-82eb-4543-8f5e-9563737bd85e/6778c41a-cfff-42f5-ab1c-cfc781a7a2ef"],
+                    backgroundColor: a!match(
+                      value: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/5537b3e2-720b-4976-a132-8bfd699792f2"],
+                      equals: 1,
+                      then: "#92C7F0",
+                      equals: 2,
+                      then: "#FFF9BE",
+                      equals: 3,
+                      then: "#B1DFAE",
+                      default: "STANDARD"
+                    )
+                  )
+                },
+                size: "STANDARD",
+                align: "CENTER"
+              ),
+              /*value: a!defaultValue(fv!row['recordType!{56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d}TDFD Maintenance.relationships.{239ece88-82eb-4543-8f5e-9563737bd85e}status.fields.{6778c41a-cfff-42f5-ab1c-cfc781a7a2ef}value'], "–"),*/
+              align: "START"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Maintenance Type",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/07f140cf-2bd9-4606-a0ab-b374e87b68c4/554d999e-b1e9-48c3-9f4f-0cc30c1029fd",
+              value: a!defaultValue(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/07f140cf-2bd9-4606-a0ab-b374e87b68c4/554d999e-b1e9-48c3-9f4f-0cc30c1029fd"], "–"),
+              align: "START"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Technician",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/8648540b-75cd-4eee-8921-fd47c117b500",
+              value: a!defaultValue(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/8648540b-75cd-4eee-8921-fd47c117b500"], "–")
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Started On",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e287027a-96dc-4783-af42-d74ba5c3af35",
+              value: if(
+                isnull(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e287027a-96dc-4783-af42-d74ba5c3af35"]),
+                "–",
+                datetext(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e287027a-96dc-4783-af42-d74ba5c3af35"], "default")
+              ),
+              align: "END",
+              width: "NARROW_PLUS"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "Completed On",
+              sortField: #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/24db7e49-d0d7-4dff-a8f3-06445dfb193c",
+              value: if(
+                isnull(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/24db7e49-d0d7-4dff-a8f3-06445dfb193c"]),
+                "–",
+                datetext(fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/24db7e49-d0d7-4dff-a8f3-06445dfb193c"], "default")
+              ),
+              align: "END",
+              width: "NARROW_PLUS"
+            ),
+            #"SYSTEM_SYSRULES_gridColumn"(
+              label: "",
+              value: #"SYSTEM_SYSRULES_recordActionField_v1"(
+                actions: {
+                  #"SYSTEM_SYSRULES_recordActionItem"(
+                    action: #"urn:appian:record-action:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/2b7ccd89-5576-4226-b2fd-f03550e3145e",
+                    identifier: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15"]
+                  ),
+                  #"SYSTEM_SYSRULES_recordActionItem"(
+                    action: #"urn:appian:record-action:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d864edf3-5914-4695-b34e-fa636525129f",
+                    identifier: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15"]
+                  )
+                },
+                style: "MENU_ICON",
+                showWhen: fv!row[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/5537b3e2-720b-4976-a132-8bfd699792f2"] &lt;&gt; 3
+              ),
+              align: "CENTER",
+              width: "ICON"
+            )
+          },
+          validations: {},
+          refreshAfter: "RECORD_ACTION",
+          userFilters: {
+            #"urn:appian:user-filter:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/ed5967bd-15dd-4e47-99f3-2219d3175a09",
+            #"urn:appian:user-filter:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/3a2d8966-c951-48c9-bf62-68873f6adc5c"
+          },
+          showSearchBox: true,
+          showRefreshButton: true,
+          recordActions: {},
+          similarityScoreThreshold: 1.0
+        )},
+        label: "Maintenance Requests",
+        marginbelow: "",
+        showBorder: true,
+        labelColor: #"_a-0000ef40-8303-8000-9be5-011c48011c48_813861",
+        showShadow: true
+      )
+    },
+    backgroundColor: "TRANSPARENT"
+  )
+)</definition>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_815658"/>
+        <historyInfo versionUuid="_a-0000ef70-14b2-8000-9bf6-011c48011c48_891312"/>
+    </history>
+</contentHaul>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<processModelFolderHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>b7411f2e-5816-42b4-bbb4-07d08295efb8</versionUuid>
+    <processModelFolder>
+        <name>TDFD Process Models</name>
+        <uuid>23025fd3-9923-44dc-afa2-2b4faa6e9a2a</uuid>
+        <description>Stores process models for the application</description>
+    </processModelFolder>
+    <roleMap>
+        <role name="ADMIN_OWNER">
+            <users/>
+            <groups>
+                <groupUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</groupUuid>
+            </groups>
+        </role>
+        <role name="EDITOR">
+            <users/>
+            <groups/>
+        </role>
+        <role name="EXPLICIT_NONMEMBER">
+            <users/>
+            <groups/>
+        </role>
+        <role name="VIEWER">
+            <users/>
+            <groups>
+                <groupUuid>a7f4131c-331e-47f6-a6d1-32475682294c</groupUuid>
+            </groups>
+        </role>
+        <role name="MANAGER">
+            <users/>
+            <groups/>
+        </role>
+        <role name="INITIATOR">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="b7411f2e-5816-42b4-bbb4-07d08295efb8"/>
+    </history>
+</processModelFolderHaul>

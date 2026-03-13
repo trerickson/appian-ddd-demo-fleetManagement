@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef4d-030f-8000-9be6-011c48011c48_824059</versionUuid>
+    <rule>
+        <name>TDFD_Get_Fleet_Sync_Source_Vehicle</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_817047</uuid>
+        <description>Setup for the Full DB GET</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+  local!response: #"6c60783c-0167-4a32-93a6-cffc5bbe6d1f"(
+    startIndex: if(isnull(ri!startIndex), 0, ri!startIndex),
+    batchSize: 150,
+    cacheBuster: ri!refreshCounter
+  ),
+  /* Temporarily return ONLY the list of data to force the wizard to map it */
+  todatasubset(
+    arrayToPage: local!response.result.body.data,
+    pagingConfiguration: #"SYSTEM_SYSRULES_pagingInfo"(
+      startIndex: ri!startIndex,
+      batchSize: 150,
+      sort: #"SYSTEM_SYSRULES_sortInfo"(
+        field: "id",
+        ascending: true
+      )
+    )
+  ).data
+)</definition>
+        <namedTypedValue>
+            <name>startIndex</name>
+            <type>
+                <name>int</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>refreshCounter</name>
+            <type>
+                <name>int</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <preferredEditor>legacy</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+    </rule>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef4d-030f-8000-9be6-011c48011c48_824059"/>
+    </history>
+</contentHaul>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<connectedSystemHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef6e-aa7a-8000-9bf2-011c48011c48_878739</versionUuid>
+    <connectedSystem>
+        <name>TDFD Fleet Management Domain</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_811708</uuid>
+        <description>Connection to the Various Fleet Management Domain APIs</description>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <sharedConfigParameters>
+            <a:Dictionary xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <configurationDescriptor xsi:type="xsd:string"/>
+                <url xsi:type="xsd:string"/>
+                <isInheritedUrlOptionSelected xsi:type="xsd:boolean">false</isInheritedUrlOptionSelected>
+                <baseUrl xsi:type="xsd:string">https://appian-ddd-demo-fleetmanagement-production-1873.up.railway.app</baseUrl>
+                <authType xsi:type="xsd:string">None</authType>
+                <authDetails xsi:type="xsd:string"/>
+            </a:Dictionary>
+        </sharedConfigParameters>
+        <logoChoice>DOCUMENT</logoChoice>
+        <logoUuid>_a-0000ef40-8303-8000-9be5-011c48011c48_811702</logoUuid>
+        <integrationType>system.http</integrationType>
+        <enableRtdShortcut>false</enableRtdShortcut>
+        <rtdShortcutDisplayName></rtdShortcutDisplayName>
+    </connectedSystem>
+    <roleMap public="true">
+        <role inherit="false" allowForAll="false" name="readers">
+            <users/>
+            <groups>
+                <groupUuid>a7f4131c-331e-47f6-a6d1-32475682294c</groupUuid>
+            </groups>
+        </role>
+        <role inherit="false" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="administrators">
+            <users/>
+            <groups>
+                <groupUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</groupUuid>
+            </groups>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_813425"/>
+        <historyInfo versionUuid="_a-0000ef6e-aa7a-8000-9bf2-011c48011c48_878739"/>
+    </history>
+</connectedSystemHaul>

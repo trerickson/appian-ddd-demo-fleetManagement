@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef40-8303-8000-9be5-011c48011c48_813090</versionUuid>
+    <rule>
+        <name>TDFD_GetOrder_recordDataSource</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_811816</uuid>
+        <description>The Record Data Source for the TDFD Part Order Record Type</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+
+  /* Call the integration and store the response in a local variable */
+  local!integrationResponse: #"b78ebb01-6c41-4eab-88bd-45c2aa790fcc"(identifiers: null),
+
+  if(
+    /* This will return true if the integration succeeds */
+    local!integrationResponse.success,
+
+    /* If needed, modify the expression below to return a list of maps, dictionaries, or CDTs that map to your record data */
+    local!integrationResponse.result.body,
+
+    /* If the integration is unsuccessful, handle accordingly */
+
+    if(
+      /* Note: handling of out of bounds exceptions varies by web service */
+      tointeger(index(local!integrationResponse.result, "statusCode", 0)) = 416,
+
+      /* If this is an out of bounds error, return an empty list to finish syncing */
+      {},
+
+      /* If this is a different error, return the integration error. */
+      /* If you need additional logic to determine the error, use a!integrationError() in the integration to format the error displayed in the sync monitor */
+      local!integrationResponse.error
+    )
+  )
+)</definition>
+        <preferredEditor>legacy</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+    </rule>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_813090"/>
+    </history>
+</contentHaul>

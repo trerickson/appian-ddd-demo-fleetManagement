@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef40-8303-8000-9be5-011c48011c48_813170</versionUuid>
+    <interface>
+        <name>TDFD_FORM_completeMaintenance</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_813158</uuid>
+        <description>Allow Tech to mark a maintenance complete</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>#"SYSTEM_SYSRULES_formLayout_v2"(
+  titleBar: #"SYSTEM_SYSRULES_headerTemplateSimple"(
+    title: "Maintenance Complete",
+    secondaryText: "Confirm Maintenance Completed",
+    titleColor: "STANDARD",
+    secondaryTextColor: "SECONDARY",
+    stampIcon: "",
+    stampColor: "ACCENT"
+  ),
+  showTitleBarDivider: false,
+  contents: {
+    #"SYSTEM_SYSRULES_sectionLayout_v1"(
+      contents: {
+        #"SYSTEM_SYSRULES_textField"(
+          label: "Vehicle",
+          labelPosition: "JUSTIFIED",
+          value: ri!maintenance[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/78897d20-5972-4a74-a3a9-eab648787758"] &amp; " " &amp; ri!maintenance[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/9a7bf720-51c2-4ea5-9a1c-707c3c3c6778"] &amp; " " &amp; ri!maintenance[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/631cfde1-92e4-4591-8983-a04047641399"],
+          saveInto: {},
+          refreshAfter: "UNFOCUS",
+          readOnly: true,
+          validations: {}
+        ),
+        #"SYSTEM_SYSRULES_textField"(
+          label: "Maintenance Type",
+          labelPosition: "JUSTIFIED",
+          value: ri!maintenance[#"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/07f140cf-2bd9-4606-a0ab-b374e87b68c4/554d999e-b1e9-48c3-9f4f-0cc30c1029fd"],
+          saveInto: {},
+          refreshAfter: "UNFOCUS",
+          readOnly: true,
+          validations: {}
+        )
+      }
+    )
+  },
+  buttons: #"SYSTEM_SYSRULES_ButtonLayout"(
+    primaryButtons: {
+      #"SYSTEM_SYSRULES_buttonWidget_v1"(
+        label: "Submit",
+        submit: true,
+        style: "SOLID",
+        loadingIndicator: true
+      )
+    },
+    secondaryButtons: {
+      #"SYSTEM_SYSRULES_buttonWidget_v1"(
+        label: "Cancel",
+        value: true,
+        saveInto: ri!cancel,
+        submit: true,
+        style: "OUTLINE",
+        validate: false
+      )
+    }
+  )
+)</definition>
+        <namedTypedValue>
+            <name>cancel</name>
+            <type>
+                <name>boolean</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>maintenance</name>
+            <type>
+                <name>56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d</name>
+                <namespace>urn:com:appian:recordtype:datatype</namespace>
+            </type>
+        </namedTypedValue>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <typedValue>
+        <type>
+            <name>RuleTestConfig?list</name>
+            <namespace>http://www.appian.com/ae/types/2009</namespace>
+        </type>
+        <value>
+            <el>
+                <a:name/>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" xsi:type="xsd:boolean"/>
+                    <a:nameRef>cancel</a:nameRef>
+                    <a:id/>
+                </a:ruleInputTestConfigs>
+                <a:ruleInputTestConfigs>
+                    <a:value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="a:Expression">#"SYSTEM_SYSRULES_queryRecordByIdentifier_v1"(
+  recordType: #"urn:appian:record-type:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d",
+  identifier: 7,
+  fields: {
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/d8e08124-17bb-4612-81b3-57503af99a15",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/07f140cf-2bd9-4606-a0ab-b374e87b68c4/554d999e-b1e9-48c3-9f4f-0cc30c1029fd",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/5537b3e2-720b-4976-a132-8bfd699792f2",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/8648540b-75cd-4eee-8921-fd47c117b500",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/e287027a-96dc-4783-af42-d74ba5c3af35",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/24db7e49-d0d7-4dff-a8f3-06445dfb193c",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/78897d20-5972-4a74-a3a9-eab648787758",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/9a7bf720-51c2-4ea5-9a1c-707c3c3c6778",
+    #"urn:appian:record-field:v1:56e24fa4-b6b0-49e6-a8c4-99845ebcfe9d/b988014a-9934-4f8a-aa5a-9b44bed695ce/631cfde1-92e4-4591-8983-a04047641399"
+  }
+)</a:value>
+                    <a:nameRef>maintenance</a:nameRef>
+                    <a:id>1</a:id>
+                </a:ruleInputTestConfigs>
+                <a:assertions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+            </el>
+        </value>
+    </typedValue>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_813170"/>
+    </history>
+</contentHaul>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<webApiHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>ca898203-a1a5-42b4-b4c8-36232fae593a</versionUuid>
+    <webApi a:uuid="75673d6a-6e66-4974-adac-441a23ab8a84" name="TDFD Sync Records">
+        <a:description>Trigger a Sync of records based on the action taken</a:description>
+        <a:expression>a!localVariables(
+  /* 1. Extract Body &amp; ID */
+  local!body: if(
+    isnull(http!request.body),
+    null,
+    #"SYSTEM_SYSRULES_fromJson_v1"(http!request.body)
+  ),
+  local!vehicleIds: index(local!body, "vehicleIds", {}),
+  local!maintenanceIds: index(local!body, "maintenanceIds", {}),
+  local!partOrderIds: index(local!body, "partOrderIds", {}),
+  /* 2. Logic Flow */
+  if(
+    and(
+      isnull(local!vehicleIds),
+      isnull(local!maintenanceIds),
+      isnull(local!partOrderIds)
+      ),
+    /* Error: 400 Bad Request */
+    #"SYSTEM_SYSRULES_httpResponse_v1"(
+      statusCode: 400,
+      headers: {
+        #"SYSTEM_SYSRULES_httpHeader"(name: "Content-Type", value: "application/json")
+      },
+      body: #"SYSTEM_SYSRULES_toJson_v1"({ error: "No identifiers provided in the body for vehicleIds, maintenanceIds, or partOrderIds." })
+    ),
+
+    /* Success: Start Process */
+    #"SYSTEM_SYSRULES_startProcess3"(
+      processModel: #"_a-0000ef40-8303-8000-9be5-011c48011c48_812851", 
+      processParameters: { 
+        "vehicleIdentifiers": tointeger(local!vehicleIds),
+        "maintenanceIdentifiers": tointeger(local!maintenanceIds),
+        "partOrderIdentifiers": tointeger(local!partOrderIds)
+        
+      },
+
+      /* CRITICAL FIX: No curly braces { } around this response */
+      onSuccess: #"SYSTEM_SYSRULES_httpResponse_v1"(
+        statusCode: 200,
+        headers: {
+          #"SYSTEM_SYSRULES_httpHeader"(name: "Content-Type", value: "application/json")
+        },
+        body: #"SYSTEM_SYSRULES_toJson_v1"({
+          status: "Success",
+          message: "Sync started for provided identifiers"
+        })
+      ),
+
+      onError: #"SYSTEM_SYSRULES_httpResponse_v1"(
+        statusCode: 500,
+        body: #"SYSTEM_SYSRULES_toJson_v1"({ error: "Failed to start sync process." })
+      )
+    )
+  )
+)</a:expression>
+        <a:urlAlias>sync-records</a:urlAlias>
+        <a:httpMethod>POST</a:httpMethod>
+        <a:system>false</a:system>
+        <a:requestBodyType>NONE</a:requestBodyType>
+        <a:loggingEnabled>false</a:loggingEnabled>
+    </webApi>
+    <roleMap>
+        <role name="web_api_administrator">
+            <users/>
+            <groups>
+                <groupUuid>02dd9669-4ea1-4f2b-a658-620fe947b364</groupUuid>
+            </groups>
+        </role>
+        <role name="web_api_viewer">
+            <users/>
+            <groups>
+                <groupUuid>a7f4131c-331e-47f6-a6d1-32475682294c</groupUuid>
+            </groups>
+        </role>
+    </roleMap>
+    <typedValue>
+        <type>
+            <name>WebApiRequest?list</name>
+            <namespace>http://www.appian.com/ae/types/2009</namespace>
+        </type>
+        <value>
+            <el>
+                <a:path/>
+                <a:body/>
+            </el>
+        </value>
+    </typedValue>
+    <history>
+        <historyInfo versionUuid="ca898203-a1a5-42b4-b4c8-36232fae593a"/>
+    </history>
+</webApiHaul>

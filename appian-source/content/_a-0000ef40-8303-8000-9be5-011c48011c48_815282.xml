@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef40-8303-8000-9be5-011c48011c48_815294</versionUuid>
+    <interface>
+        <name>TDFD_FORM_startVehicleMaintenance</name>
+        <uuid>_a-0000ef40-8303-8000-9be5-011c48011c48_815282</uuid>
+        <description>Allow a technician to start maintenance on a vehicle</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>a!localVariables(
+    local!techNotes,
+    local!maintenanceTypeId: 1,
+    #"SYSTEM_SYSRULES_formLayout_v2"(
+      titleBar: #"SYSTEM_SYSRULES_headerTemplateSimple"(
+        title: "Start Maintenance",
+        secondaryText: "Enter Maintenance Details",
+        titleColor: "STANDARD",
+        secondaryTextColor: "SECONDARY",
+        stampIcon: "",
+        stampColor: "ACCENT"
+      ),
+      showTitleBarDivider: false,
+      contents: {
+        #"SYSTEM_SYSRULES_sectionLayout_v1"(
+          contents: {
+            #"SYSTEM_SYSRULES_dropdownField_v1"(
+              data: #"SYSTEM_SYSRULES_recordData"(
+                recordType: #"urn:appian:record-type:v1:4d297f92-2ba1-4bb0-a39e-31cbc64733b9",
+                filters: #"SYSTEM_SYSRULES_queryLogicalExpression"(
+                  operator: "AND",
+                  filters: {
+                    #"SYSTEM_SYSRULES_queryFilter"(
+                      field: #"urn:appian:record-field:v1:4d297f92-2ba1-4bb0-a39e-31cbc64733b9/c4e0d3a0-6746-4075-bdba-99f34009b492",
+                      operator: "=",
+                      value: true
+                    )
+                  },
+                  ignoreFiltersWithEmptyValues: true
+                )
+              ),
+              choiceLabels: #"urn:appian:record-field:v1:4d297f92-2ba1-4bb0-a39e-31cbc64733b9/554d999e-b1e9-48c3-9f4f-0cc30c1029fd",
+              choiceValues: #"urn:appian:record-field:v1:4d297f92-2ba1-4bb0-a39e-31cbc64733b9/2c52f892-70ca-4028-8c62-7576f5f0f228",
+              label: "Dropdown",
+              labelPosition: "ABOVE",
+              placeholder: "--- Select a Value ---",
+              value: local!maintenanceTypeId,
+              saveInto: local!maintenanceTypeId,
+              searchDisplay: "AUTO",
+              required: true,
+              requiredMessage: "You must specify the type of maintenance to proceed",
+              validations: {}
+            ),
+            #"SYSTEM_SYSRULES_paragraphField"(
+              label: "Technican Notes",
+              labelPosition: "ABOVE",
+              value: local!techNotes,
+              saveInto: local!techNotes,
+              refreshAfter: "UNFOCUS",
+              characterLimit: 5000,
+              height: "MEDIUM",
+              validations: {}
+            )
+          }
+        ),
+      },
+      buttons: #"SYSTEM_SYSRULES_ButtonLayout"(
+        primaryButtons: {
+          #"SYSTEM_SYSRULES_buttonWidget_v1"(
+            label: "Submit",
+            icon: "check",
+            saveInto: {
+              a!save(
+                target: ri!technican,
+                value: loggedInUser()
+              ),
+              a!save(
+                target: ri!maintenanceTypeId,
+                value: local!maintenanceTypeId
+              ),
+            },
+            submit: true,
+            style: "SOLID",
+            loadingIndicator: true,
+          )
+        },
+        secondaryButtons: {
+          #"SYSTEM_SYSRULES_buttonWidget_v1"(
+            label: "Cancel",
+            value: true,
+            saveInto: ri!cancel,
+            submit: true,
+            style: "LINK",
+            validate: false
+          )
+        },
+      )
+    )
+)
+</definition>
+        <namedTypedValue>
+            <name>cancel</name>
+            <type>
+                <name>boolean</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>vehicleId</name>
+            <type>
+                <name>int</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>maintenanceTypeId</name>
+            <type>
+                <name>int</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>technican</name>
+            <type>
+                <name>User</name>
+                <namespace>http://www.appian.com/ae/types/2009</namespace>
+            </type>
+        </namedTypedValue>
+        <preferredEditor>interface</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+        <isCustom>false</isCustom>
+    </interface>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef40-8303-8000-9be5-011c48011c48_815294"/>
+    </history>
+</contentHaul>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<contentHaul xmlns:a="http://www.appian.com/ae/types/2009">
+    <versionUuid>_a-0000ef70-14b2-8000-9bf6-011c48011c48_891285</versionUuid>
+    <rule>
+        <name>TDFD_filterRecordData</name>
+        <uuid>_a-0000ef70-14b2-8000-9bf6-011c48011c48_891280</uuid>
+        <description>Filters a list of record data</description>
+        <parentUuid>83e2dedf-eebb-4919-a743-746bec7d52b9</parentUuid>
+        <visibility>
+            <advertise>false</advertise>
+            <hierarchy>true</hierarchy>
+            <indexable>true</indexable>
+            <quota>false</quota>
+            <searchable>true</searchable>
+            <system>false</system>
+            <unlogged>false</unlogged>
+        </visibility>
+        <definition>/*
+=====Change Log=====
+2023/06/12 Ata Gurpinar - Added to CS Sandbox
+*/
+index(
+  ri!recordData,
+  a!match(
+    value: ri!operator,
+    equals: "=",
+    then: wherecontains(
+      tostring(ri!value),
+      touniformstring(index(ri!recordData, ri!field, null))
+    ),
+    equals: "&lt;&gt;",
+    then: difference(
+      enumerate(count(ri!recordData)) + 1,
+      wherecontains(
+        tostring(ri!value),
+        touniformstring(index(ri!recordData, ri!field, null))
+      )
+    ),
+    equals: "&gt;=",
+    then: null,
+    /*Future Functionality */
+    equals: "&lt;",
+    then: null,
+    /*Future Functionality */
+    equals: "&lt;=",
+    then: null,
+    /*Future Functionality */
+    equals: "between",
+    then: null,
+    /*Future Functionality */
+    equals: "in",
+    then: wherecontains(
+      touniformstring(ri!value),
+      touniformstring(index(ri!recordData, ri!field, null))
+    ),
+    equals: "not in",
+    then: difference(
+      enumerate(count(ri!recordData)) + 1,
+      wherecontains(
+        touniformstring(ri!value),
+        touniformstring(index(ri!recordData, ri!field, null))
+      )
+    ),
+    equals: "is null",
+    then: wherecontains(
+      tostring(null),
+      touniformstring(index(ri!recordData, ri!field, null))
+    ),
+    equals: "not null",
+    then: difference(
+      enumerate(count(ri!recordData)) + 1,
+      wherecontains(
+        tostring(null),
+        touniformstring(index(ri!recordData, ri!field, null))
+      )
+    ),
+    equals: "starts with",
+    then: null,
+    /*Future Functionality */
+    equals: "not starts with",
+    then: null,
+    /*Future Functionality */
+    equals: "ends with",
+    then: null,
+    /*Future Functionality */
+    equals: "not ends with",
+    then: null,
+    /*Future Functionality */
+    equals: "includes",
+    then: null,
+    /*Future Functionality */
+    equals: "not includes",
+    then: null,
+    /*Future Functionality */
+    default: null
+  ),
+  null
+)</definition>
+        <namedTypedValue>
+            <name>recordData</name>
+            <type>
+                <name>Variant</name>
+                <namespace>http://www.appian.com/ae/types/2009</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>field</name>
+            <type>
+                <name>RecordField</name>
+                <namespace>http://www.appian.com/ae/types/2009</namespace>
+            </type>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>operator</name>
+            <type>
+                <name>string</name>
+                <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+            </type>
+            <value/>
+        </namedTypedValue>
+        <namedTypedValue>
+            <name>value</name>
+            <type>
+                <name>Variant</name>
+                <namespace>http://www.appian.com/ae/types/2009</namespace>
+            </type>
+        </namedTypedValue>
+        <preferredEditor>legacy</preferredEditor>
+        <offlineEnabled>false</offlineEnabled>
+    </rule>
+    <roleMap public="true">
+        <role inherit="true" allowForAll="false" name="readers">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="authors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="true" allowForAll="false" name="administrators">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyReaders">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAuthors">
+            <users/>
+            <groups/>
+        </role>
+        <role inherit="false" allowForAll="false" name="denyAdministrators">
+            <users/>
+            <groups/>
+        </role>
+    </roleMap>
+    <history>
+        <historyInfo versionUuid="_a-0000ef70-14b2-8000-9bf6-011c48011c48_891285"/>
+    </history>
+</contentHaul>

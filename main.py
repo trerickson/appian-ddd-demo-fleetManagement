@@ -30,26 +30,29 @@ Base = declarative_base()
 APPIAN_SYNC_URL = "https://fleet-management-ddd.appian-sites.net/suite/webapi/sync-records"
 APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNTNmNDg3OC01NzBiLTNiOWMtZDgyMy1jMWVkY2M4MDBkZjEifQ.fKpUNeoOrCVxp3RF5meGJeq_fF3n3-XFXx6doq8t5iE"
 
+
 # --- 2. MODELS ---
 class MaintenanceStatus(IntEnum):
     IN_PROGRESS = 1
     WAITING_FOR_PARTS = 2
     COMPLETED = 3
 
+
 class VehicleModel(Base):
     __tablename__ = "fm_vehicles"
     id = Column(Integer, primary_key=True, index=True)
-    vin = Column(String, unique=True, index=True) 
-    color = Column(String)                        
+    vin = Column(String, unique=True, index=True)
+    color = Column(String)
     make = Column(String)
     model = Column(String)
     year = Column(Integer)
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
     last_service_date = Column(DateTime, nullable=True)
-    
+
     # Relationship for Hierarchical Read
     maintenance_logs = relationship("MaintenanceModel", back_populates="vehicle")
+
 
 class MaintenanceModel(Base):
     __tablename__ = "fm_maintenances"
@@ -58,13 +61,14 @@ class MaintenanceModel(Base):
     technician = Column(String)
     maintenance_type_id = Column(Integer)
     status_id = Column(Integer, default=MaintenanceStatus.IN_PROGRESS)
-    notes_open = Column(String, nullable=True)   
-    notes_close = Column(String, nullable=True)  
+    notes_open = Column(String, nullable=True)
+    notes_close = Column(String, nullable=True)
     created_on = Column(DateTime, default=datetime.utcnow)
     completed_on = Column(DateTime, nullable=True)
 
     vehicle = relationship("VehicleModel", back_populates="maintenance_logs")
     part_orders = relationship("PartOrderModel", back_populates="maintenance")
+
 
 class PartOrderModel(Base):
     __tablename__ = "fm_part_orders"
@@ -77,18 +81,21 @@ class PartOrderModel(Base):
 
     maintenance = relationship("MaintenanceModel", back_populates="part_orders")
 
+
 # --- 3. DATABASE SETUP & SEEDING ---
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
 
+
 def generate_vin():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=17))
+
 
 def seed_database(db: Session):
     print("DEBUG: Checking if seeding is needed...")
     if db.query(VehicleModel).count() > 0:
         return
-    
+
     fleet_data = [
         ("Ford", ["F-150", "Mustang", "Explorer", "Bronco", "Ranger"]),
         ("Toyota", ["Camry", "Corolla", "RAV4", "Tacoma", "Tundra"]),
@@ -99,7 +106,7 @@ def seed_database(db: Session):
         ("Dodge", ["Ram 1500", "Charger", "Challenger"])
     ]
     colors = ["White", "Black", "Silver", "Red", "Blue", "Grey", "Green", "Yellow"]
-    
+
     vehicles_to_add = []
     for _ in range(100):
         make_tuple = random.choice(fleet_data)
@@ -118,8 +125,10 @@ def seed_database(db: Session):
     db.commit()
     print("DEBUG: Seeding complete!")
 
+
 # --- 4. APP & DEPENDENCIES ---
 app = FastAPI()
+
 
 def get_db():
     db = SessionLocal()
@@ -128,26 +137,30 @@ def get_db():
     finally:
         db.close()
 
+
 @app.on_event("startup")
 def startup_event():
     db = SessionLocal()
     seed_database(db)
     db.close()
 
+
 # --- 5. DTOs ---
 class VehicleDTO(BaseModel):
     id: int
-    vin: str    
-    color: str  
+    vin: str
+    color: str
     make: str
     model: str
     year: int
     isActive: bool = Field(..., alias="is_active")
     isDeleted: bool = Field(..., alias="is_deleted")
     lastServiceDate: Optional[datetime] = Field(None, alias="last_service_date")
+
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
+
 
 class MaintenanceDTO(BaseModel):
     id: int
@@ -155,13 +168,15 @@ class MaintenanceDTO(BaseModel):
     technician: str
     maintenanceTypeId: int = Field(..., alias="maintenance_type_id")
     statusId: int = Field(..., alias="status_id")
-    notesOpen: Optional[str] = Field(None, alias="notes_open")   
-    notesClose: Optional[str] = Field(None, alias="notes_close") 
+    notesOpen: Optional[str] = Field(None, alias="notes_open")
+    notesClose: Optional[str] = Field(None, alias="notes_close")
     createdOn: datetime = Field(..., alias="created_on")
     completedOn: Optional[datetime] = Field(None, alias="completed_on")
+
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
+
 
 class PartOrderDTO(BaseModel):
     id: int
@@ -170,9 +185,11 @@ class PartOrderDTO(BaseModel):
     totalAmount: float = Field(..., alias="total_amount")
     purchasedOn: datetime = Field(..., alias="purchased_on")
     installedOn: Optional[datetime] = Field(None, alias="installed_on")
+
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
+
 
 # --- 6. APPIAN SYNC TRIGGER ---
 def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_id: int = None):
@@ -180,21 +197,38 @@ def trigger_sync(vehicle_id: int = None, maintenance_id: int = None, part_order_
     if vehicle_id: payload["vehicleIds"] = [vehicle_id]
     if maintenance_id: payload["maintenanceIds"] = [maintenance_id]
     if part_order_id: payload["partOrderIds"] = [part_order_id]
-    if not payload: return 
+    if not payload: return
     try:
         requests.post(APPIAN_SYNC_URL, json=payload, headers={"Appian-API-Key": APPIAN_API_KEY}, timeout=15)
     except Exception as e:
         print(f"Sync trigger failed: {e}")
 
+
 # --- 7. REQUEST MODELS ---
 class CreateVehicleRequest(BaseModel):
-    vin: str; color: str; make: str; model: str; year: int
+    vin: str;
+    color: str;
+    make: str;
+    model: str;
+    year: int
+
+
 class StartMaintenanceRequest(BaseModel):
-    vehicleId: int; technician: str; maintenanceTypeId: int; notesOpen: Optional[str] = None 
+    vehicleId: int;
+    technician: str;
+    maintenanceTypeId: int;
+    notesOpen: Optional[str] = None
+
+
 class CompleteMaintenanceRequest(BaseModel):
-    notesClose: Optional[str] = None 
+    notesClose: Optional[str] = None
+
+
 class OrderPartsRequest(BaseModel):
-    maintenanceId: int; purchaseCardNum: str; totalAmount: float
+    maintenanceId: int;
+    purchaseCardNum: str;
+    totalAmount: float
+
 
 # --- 8. HIERARCHICAL SYNC ENDPOINT (NET NEW) ---
 @app.get("/fleet-fabric/sync")
@@ -225,68 +259,102 @@ def get_hierarchical_fleet(startIndex: int = 0, batchSize: int = 50, db: Session
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # --- 9. ATOMIC ENDPOINTS (LEGACY) ---
 @app.get("/vehicles/", response_model=List[VehicleDTO])
-def get_vehicles(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_vehicles(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None),
+                 db: Session = Depends(get_db)):
     query = db.query(VehicleModel)
     if ids:
         id_list = [int(i) for i in ids.split(",")]
         query = query.filter(VehicleModel.id.in_(id_list))
     return query.offset(startIndex).limit(batchSize).all()
 
+
 @app.get("/maintenance/", response_model=List[MaintenanceDTO])
-def get_maintenance(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_maintenance(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None),
+                    db: Session = Depends(get_db)):
     query = db.query(MaintenanceModel)
     if ids:
         id_list = [int(i) for i in ids.split(",")]
         query = query.filter(MaintenanceModel.id.in_(id_list))
     return query.offset(startIndex).limit(batchSize).all()
 
+
 @app.get("/part-orders/", response_model=List[PartOrderDTO])
-def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_part_orders(startIndex: int = 0, batchSize: int = 100, ids: Optional[str] = Query(None),
+                    db: Session = Depends(get_db)):
     query = db.query(PartOrderModel)
     if ids:
         id_list = [int(i) for i in ids.split(",")]
         query = query.filter(PartOrderModel.id.in_(id_list))
     return query.offset(startIndex).limit(batchSize).all()
 
+
 @app.post("/vehicles/", response_model=VehicleDTO)
 def create_vehicle(vehicle: CreateVehicleRequest, db: Session = Depends(get_db)):
     new_v = VehicleModel(**vehicle.dict(), is_active=True, is_deleted=False)
-    db.add(new_v); db.commit(); db.refresh(new_v)
-    trigger_sync(vehicle_id=new_v.id); return new_v
+    db.add(new_v);
+    db.commit();
+    db.refresh(new_v)
+    trigger_sync(vehicle_id=new_v.id);
+    return new_v
+
 
 @app.put("/vehicles/{v_id}/retire", response_model=VehicleDTO)
 def retire_vehicle(v_id: int, db: Session = Depends(get_db)):
     v = db.query(VehicleModel).filter(VehicleModel.id == v_id).first()
     if not v: raise HTTPException(404, "Not found")
-    v.is_deleted = True; v.is_active = False; db.commit(); db.refresh(v)
-    trigger_sync(vehicle_id=v.id); return v
+    v.is_deleted = True;
+    v.is_active = False;
+    db.commit();
+    db.refresh(v)
+    trigger_sync(vehicle_id=v.id);
+    return v
+
 
 @app.post("/maintenance/start", response_model=MaintenanceDTO)
 def start_maintenance(req: StartMaintenanceRequest, db: Session = Depends(get_db)):
     v = db.query(VehicleModel).filter(VehicleModel.id == req.vehicleId).first()
     if not v: raise HTTPException(404, "Not found")
-    m = MaintenanceModel(vehicle_id=req.vehicleId, technician=req.technician, maintenance_type_id=req.maintenanceTypeId, created_on=datetime.utcnow())
-    db.add(m); v.is_active = False; db.commit(); db.refresh(m)
-    trigger_sync(maintenance_id=m.id); return m
+    m = MaintenanceModel(vehicle_id=req.vehicleId, technician=req.technician, maintenance_type_id=req.maintenanceTypeId,
+                         created_on=datetime.utcnow())
+    db.add(m);
+    v.is_active = False;
+    db.commit();
+    db.refresh(m)
+    trigger_sync(maintenance_id=m.id);
+    return m
+
 
 @app.post("/maintenance/parts", response_model=PartOrderDTO)
 def order_parts(req: OrderPartsRequest, db: Session = Depends(get_db)):
     m = db.query(MaintenanceModel).filter(MaintenanceModel.id == req.maintenanceId).first()
     if not m: raise HTTPException(404, "Not found")
-    p = PartOrderModel(maintenance_id=req.maintenanceId, purchase_card_num=req.purchaseCardNum, total_amount=req.totalAmount)
-    db.add(p); m.status_id = MaintenanceStatus.WAITING_FOR_PARTS; db.commit(); db.refresh(p)
-    trigger_sync(part_order_id=p.id); return p
+    p = PartOrderModel(maintenance_id=req.maintenanceId, purchase_card_num=req.purchaseCardNum,
+                       total_amount=req.totalAmount)
+    db.add(p);
+    m.status_id = MaintenanceStatus.WAITING_FOR_PARTS;
+    db.commit();
+    db.refresh(p)
+    trigger_sync(part_order_id=p.id);
+    return p
+
 
 @app.put("/maintenance/{m_id}/complete", response_model=MaintenanceDTO)
 def complete_maintenance(m_id: int, req: CompleteMaintenanceRequest, db: Session = Depends(get_db)):
     m = db.query(MaintenanceModel).filter(MaintenanceModel.id == m_id).first()
     if not m: raise HTTPException(404, "Not found")
     v = db.query(VehicleModel).filter(VehicleModel.id == m.vehicle_id).first()
-    m.status_id = MaintenanceStatus.COMPLETED; m.completed_on = datetime.utcnow(); m.notes_close = req.notesClose
+    m.status_id = MaintenanceStatus.COMPLETED;
+    m.completed_on = datetime.utcnow();
+    m.notes_close = req.notesClose
     if v: v.is_active = True; v.last_service_date = datetime.utcnow()
-    db.commit(); db.refresh(m); trigger_sync(maintenance_id=m.id); return m
+    db.commit();
+    db.refresh(m);
+    trigger_sync(maintenance_id=m.id);
+    return m
+
 
 # =====================================================================
 # --- 10. NON-RECORD FABRIC ENDPOINTS (STRICTLY ADDITIVE FOR DEMO 2) ---
@@ -296,14 +364,14 @@ def complete_maintenance(m_id: int, req: CompleteMaintenanceRequest, db: Session
 def format_hierarchical_vehicle(v: VehicleModel):
     """Formats a single vehicle into the exact nested JSON expected by the Appian UI."""
     return {
-        "id": v.id, 
-        "vin": v.vin, 
-        "make": v.make, 
+        "id": v.id,
+        "vin": v.vin,
+        "make": v.make,
         "model": v.model,
         "maintenance": [
             {
-                "id": m.id, 
-                "technician": m.technician, 
+                "id": m.id,
+                "technician": m.technician,
                 "statusId": m.status_id,
                 "part_orders": [
                     {"id": p.id, "part": p.purchase_card_num, "cost": p.total_amount}
@@ -313,12 +381,21 @@ def format_hierarchical_vehicle(v: VehicleModel):
         ]
     }
 
+
 # --- ISOLATED REQUEST MODELS ---
 class FabricCreateVehicleRequest(BaseModel):
-    vin: str; color: str; make: str; model: str; year: int
+    vin: str;
+    color: str;
+    make: str;
+    model: str;
+    year: int
+
 
 class FabricStartMaintenanceRequest(BaseModel):
-    technician: str; maintenanceTypeId: int; notesOpen: Optional[str] = None
+    technician: str;
+    maintenanceTypeId: int;
+    notesOpen: Optional[str] = None
+
 
 # --- NEW ENDPOINTS ---
 
@@ -329,11 +406,12 @@ def fabric_create_vehicle(req: FabricCreateVehicleRequest, db: Session = Depends
     db.add(new_v)
     db.commit()
     db.refresh(new_v)
-    
+
     # Fire sync so your Demo 1 Appian Records stay secretly updated in the background
     trigger_sync(vehicle_id=new_v.id)
-    
+
     return format_hierarchical_vehicle(new_v)
+
 
 @app.post("/fleet-fabric/vehicles/{vehicle_id}/maintenance")
 def fabric_add_maintenance(vehicle_id: int, req: FabricStartMaintenanceRequest, db: Session = Depends(get_db)):
@@ -342,10 +420,10 @@ def fabric_add_maintenance(vehicle_id: int, req: FabricStartMaintenanceRequest, 
     v = db.query(VehicleModel).options(
         joinedload(VehicleModel.maintenance_logs).joinedload(MaintenanceModel.part_orders)
     ).filter(VehicleModel.id == vehicle_id).first()
-    
+
     if not v:
         raise HTTPException(404, "Vehicle not found")
-        
+
     # 2. Add new maintenance
     new_m = MaintenanceModel(
         vehicle_id=vehicle_id,
@@ -355,12 +433,12 @@ def fabric_add_maintenance(vehicle_id: int, req: FabricStartMaintenanceRequest, 
         created_on=datetime.utcnow()
     )
     db.add(new_m)
-    v.is_active = False # Vehicle in shop
+    v.is_active = False  # Vehicle in shop
     db.commit()
-    
+
     # 3. Refresh to get the updated relationships
     db.refresh(v)
     trigger_sync(maintenance_id=new_m.id, vehicle_id=v.id)
-    
+
     # 4. Return the exact hierarchical shape so Appian can hot-swap the UI row
     return format_hierarchical_vehicle(v)
