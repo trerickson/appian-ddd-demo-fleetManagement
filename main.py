@@ -3,11 +3,12 @@ import sys
 import random
 import string
 import requests
+import jwt
 from datetime import datetime, timedelta
 from typing import List, Optional
 from enum import IntEnum
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, Header
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey, func, text
 from sqlalchemy.orm import sessionmaker, relationship, Session, declarative_base, joinedload
@@ -33,6 +34,25 @@ APPIAN_API_KEY = os.getenv("APPIAN_API_KEY")
 if not APPIAN_SYNC_URL or not APPIAN_API_KEY:
     print("FATAL ERROR: APPIAN_SYNC_URL or APPIAN_API_KEY environment variable is MISSING.")
     sys.exit(1)
+
+# --- INBOUND AUTH CONFIG ---
+# Separate from APPIAN_API_KEY above (that one is OUTBOUND, used to call Appian's webhook).
+# This secret signs short-lived tokens that Appian's connected system must present
+# on every inbound request. Generate/rotate tokens with generate_token.py.
+INBOUND_API_SECRET = os.getenv("INBOUND_API_SECRET")
+
+if not INBOUND_API_SECRET:
+    print("FATAL ERROR: INBOUND_API_SECRET environment variable is MISSING.")
+    sys.exit(1)
+
+
+def verify_token(x_api_key: str = Header(...)):
+    try:
+        jwt.decode(x_api_key, INBOUND_API_SECRET, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 # --- 2. MODELS ---
@@ -131,7 +151,12 @@ def seed_database(db: Session):
 
 
 # --- 4. APP & DEPENDENCIES ---
-app = FastAPI()
+app = FastAPI(
+    dependencies=[Depends(verify_token)],
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 def get_db():
