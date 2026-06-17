@@ -27,8 +27,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- APPIAN WEBHOOK CONFIG ---
-APPIAN_SYNC_URL = "https://fleet-management-ddd.appian-sites.net/suite/webapi/sync-records"
-APPIAN_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNTNmNDg3OC01NzBiLTNiOWMtZDgyMy1jMWVkY2M4MDBkZjEifQ.fKpUNeoOrCVxp3RF5meGJeq_fF3n3-XFXx6doq8t5iE"
+APPIAN_SYNC_URL = os.getenv("APPIAN_SYNC_URL")
+APPIAN_API_KEY = os.getenv("APPIAN_API_KEY")
+
+if not APPIAN_SYNC_URL or not APPIAN_API_KEY:
+    print("FATAL ERROR: APPIAN_SYNC_URL or APPIAN_API_KEY environment variable is MISSING.")
+    sys.exit(1)
 
 
 # --- 2. MODELS ---
